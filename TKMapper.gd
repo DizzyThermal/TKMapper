@@ -6,7 +6,7 @@ var tile_page_size := 160
 var object_page_size := 38
 
 # State Variables
-var map_id := 41 # Mythic Nexus (TK000041.cmp)
+var map_id := 0
 var map_renderer: NTK_MapRenderer = null
 
 var cursor_renderer: NTK_CursorRenderer = null
@@ -84,6 +84,7 @@ func _ready():
 	$Camera2D.limit_top = -480
 
 	# Load Map
+	map_id = Resources.start_map_id
 	load_map(map_id)
 
 	# Create Cursor Tile
@@ -469,8 +470,18 @@ func load_objectset(start_object: int=0, object_count: int=object_page_size) -> 
 		object_set_container.add_child(object_texture)
 	status_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
 
+func update_file_dialog_path() -> void:
+	var map_file_name := ("TK%06d.cmp" % map_id)
+	if FileAccess.file_exists(Resources.map_dir + "/" + map_file_name):
+		file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
+		file_dialog.current_dir = Resources.map_dir
+	elif FileAccess.file_exists(Resources.local_map_dir + "/" + map_file_name):
+		file_dialog.access = FileDialog.Access.ACCESS_RESOURCES
+		file_dialog.current_dir = Resources.local_map_dir
+
 func _load_map():
 	# Select Map to Load
+	update_file_dialog_path()
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
 	menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
@@ -480,6 +491,7 @@ func _on_load_map_pressed():
 
 func _save_map():
 	# Select Map to Save
+	update_file_dialog_path()
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
 	menu_open = true
 	file_dialog.popup_centered_ratio(0.6)

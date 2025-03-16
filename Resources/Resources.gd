@@ -14,6 +14,9 @@ var local_map_dir := "res://Maps"
 var mnm_dir := ""
 var desktop_dir := ""
 
+# Test Map (Maps/TK010000.cmp)
+var start_map_id: int = 10000
+
 # TODO: See if this is problematic for future items
 var offset_range: Array[int] = []
 
@@ -56,6 +59,7 @@ func _init():
 	self.data_dir = config_json.data_dir.replace("\\", "/").replace("${HOME}", home_dir)
 	self.map_dir = config_json.map_dir.replace("\\", "/").replace("${HOME}", home_dir)
 	self.mnm_dir = config_json.mnm_dir.replace("\\", "/").replace("${HOME}", home_dir)
+	self.start_map_id = config_json.start_map_id
 
 	# Check NTK Data Directory
 	if not FileAccess.file_exists(self.data_dir + "/tile.dat"):

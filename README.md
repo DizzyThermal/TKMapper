@@ -2,6 +2,8 @@
 
 NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 
+![TKMapper](./tkmapper.png)
+
 ## Setup
 
 * Install NexusTK
@@ -31,15 +33,21 @@ your system's NexusTK directories
 
 ### Keyboard Shortcuts
 
-* `d`: Delete Mode: Allows deleting tiles/objects
-* `i`: Insert Mode: Allows inserting tiles/objects
-* `m`: Toggle Modes: Toggles between modes: Tile -> Object -> Unpassable
-* `t`: Tile Mode: Toggles Tile Mode
-* `o`: Object Mode: Toggles Object Mode
-* `p`: Unpassable Mode: Toggles Unpassable Mode
-* `h`: Hide Objects: Toggles Objects (for ground visibility)
 * `s`: Save Map: Opens Save Map Dialog
 * `l`: Load Map: Opens Load Map Dialog
+
+* Mode Switching:
+    * `d`: Delete Mode: Allows deleting tiles/objects
+    * `i`: Insert Mode: Allows inserting tiles/objects
+
+* Mode Type Switching
+    * `m`: Toggle Modes: Toggles between modes: Tile -> Object -> Unpassable
+    * `t`: Tile Mode: Toggles Tile Mode
+    * `o`: Object Mode: Toggles Object Mode
+    * `p`: Unpassable Mode: Toggles Unpassable Mode
+
+* Other:
+* `h`: Hide Objects: Toggles Objects (for ground visibility)
 
 ### Mouse Shortcuts
 

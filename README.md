@@ -23,13 +23,13 @@ your system's NexusTK directories
 ## Usage
 
 * Insert / Delete Keyboard Shortcuts (`i` and `d`):
-	* [I]nsert: This allows you to insert tiles/objects
-	* [D]elete: This allows you to delete tiles/objects
+    * [I]nsert: This allows you to insert tiles/objects
+    * [D]elete: This allows you to delete tiles/objects
 
 * The 3 modes are:
-	* Tile Mode: Edits the ground tiles
-	* Object Mode: Edits the objects
-	* Unpassable Mode: Edits the unpassable tiles
+    * Tile Mode: Edits the ground tiles
+    * Object Mode: Edits the objects
+    * Unpassable Mode: Edits the unpassable tiles
 
 ### Keyboard Shortcuts
 
@@ -47,7 +47,7 @@ your system's NexusTK directories
     * `p`: Unpassable Mode: Toggles Unpassable Mode
 
 * Other:
-* `h`: Hide Objects: Toggles Objects (for ground visibility)
+    * `h`: Hide Objects: Toggles Objects (for ground visibility)
 
 ### Mouse Shortcuts
 
@@ -57,14 +57,14 @@ your system's NexusTK directories
 #### Mode Specific Mouse Shortcuts
 
 * Insert Mode (Over Map):
-	* `Left Mouse Button`: Inserts/places the currently selected tile or object
-	(hovering near mouse)
-	* `Right Mouse Button`: Copies the tile or object under the mouse cursor as
-	the currently selected tile or object
+    * `Left Mouse Button`: Inserts/places the currently selected tile or object
+    (hovering near mouse)
+    * `Right Mouse Button`: Copies the tile or object under the mouse cursor as
+    the currently selected tile or object
 
 * Insert Mode (Over Tile/Object Selection):
-	* `Left Mouse Button`: Copies the tile or object under the mouse cursor as the
-	currently selected tile or object
+    * `Left Mouse Button`: Copies the tile or object under the mouse cursor as the
+    currently selected tile or object
 
 * Delete Mode (Over Map):
-	* `Left Mouse Button`: Deletes the tile or object under the mouse cursor
+    * `Left Mouse Button`: Deletes the tile or object under the mouse cursor

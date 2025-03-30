@@ -1,3 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 config.json
+
+# TKMapper
+Maps/*.cmp
+!Maps/TK010000.cmp

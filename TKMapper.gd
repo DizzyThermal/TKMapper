@@ -1,9 +1,8 @@
 extends Node2D
 
-# Parameters
-var display_resolution := Vector2i(1400, 900)
-var tile_page_size := 160
-var object_page_size := 38
+# Config Parameters
+var tile_page_size := 170
+var object_page_size := 36
 
 # State Variables
 var map_id := 0
@@ -25,9 +24,12 @@ var max_tile_pages := 0		# Evaluated to: tile_page_size / tile_count (in TileRen
 var max_object_pages := 0	# Evaluated to: object_page_size / object_count (in SObjRenderer sobj)
 var current_tile_page := 0
 var current_object_page := 0
-var mouse_on_tilemap := true
 var menu_open := false
+var over_window := false
 var over_title_bar := false
+var over_status_bar := false
+var over_selection_area := false
+var over_button := false
 var objects_hidden := false
 var is_erase_mode := false
 
@@ -59,19 +61,22 @@ var map_unpassables := {}
 @onready var tile_set_container := $CanvasLayer/TileSelectionBackground/ScrollContainer/Container
 @onready var object_set_container := $CanvasLayer/ObjectSelectionBackground/ScrollContainer/HBoxContainer
 @onready var file_dialog := $CanvasLayer/Title/FileDialog
+@onready var load_map_button := $CanvasLayer/Title/LoadMap
+@onready var save_map_button := $CanvasLayer/Title/SaveMap
 @onready var tile_mode_button := $CanvasLayer/Title/TileMode
 @onready var object_mode_button := $CanvasLayer/Title/ObjectMode
 @onready var unpassable_mode_button := $CanvasLayer/Title/UnpassableMode
-@onready var undo_button := $CanvasLayer/Title/Undo
 @onready var hide_objects_button := $CanvasLayer/Title/HideObjects
+@onready var undo_button := $CanvasLayer/Title/Undo
 @onready var info_label := $CanvasLayer/Title/InfoLabel
+@onready var status_bar := $CanvasLayer/StatusBar
+@onready var page_info_label := $CanvasLayer/StatusBar/PageInfoLabel
 @onready var status_label := $CanvasLayer/StatusBar/StatusLabel
+@onready var hide_panel_button := $CanvasLayer/StatusBar/HidePanel
 @onready var next_button := $CanvasLayer/StatusBar/NextTile
 @onready var prev_button := $CanvasLayer/StatusBar/PreviousTile
 
 func _ready():
-	DisplayServer.window_set_size(display_resolution)
-
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
 	file_dialog.current_dir = Resources.map_dir
@@ -101,47 +106,122 @@ func _ready():
 	var max_object_count = map_renderer.sobj_renderer.sobj.object_count
 	max_tile_pages = ceil(max_tile_count / tile_page_size)
 	max_object_pages = ceil(max_object_count / object_page_size) 
-	status_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
-	tile_selection_area.connect("mouse_entered", func(): self.mouse_on_tilemap = false)
-	tile_selection_area.connect("mouse_exited", func(): self.mouse_on_tilemap = true)
-	object_selection_area.connect("mouse_entered", func(): self.mouse_on_tilemap = false)
-	object_selection_area.connect("mouse_exited", func(): self.mouse_on_tilemap = true)
+	page_info_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 	change_to_tile_mode()
 
 	# Connect Signals
+	## Viewport
+	get_viewport().connect("mouse_entered", func(): self.over_window = true)
+	get_viewport().connect("mouse_exited", func(): self.over_window = false)
+
+	## Title Bar
 	title_bar.connect("mouse_entered", func(): self.over_title_bar = true)
 	title_bar.connect("mouse_exited", func(): self.over_title_bar = false)
 
+	load_map_button.connect("mouse_entered", func(): self.over_button = true)
+	load_map_button.connect("mouse_exited", func(): self.over_button = false)
+
+	save_map_button.connect("mouse_entered", func(): self.over_button = true)
+	save_map_button.connect("mouse_exited", func(): self.over_button = false)
+
+	tile_mode_button.connect("mouse_entered", func(): self.over_button = true)
+	tile_mode_button.connect("mouse_exited", func(): self.over_button = false)
+
+	object_mode_button.connect("mouse_entered", func(): self.over_button = true)
+	object_mode_button.connect("mouse_exited", func(): self.over_button = false)
+
+	unpassable_mode_button.connect("mouse_entered", func(): self.over_button = true)
+	unpassable_mode_button.connect("mouse_exited", func(): self.over_button = false)
+
+	hide_objects_button.connect("mouse_entered", func(): self.over_button = true)
+	hide_objects_button.connect("mouse_exited", func(): self.over_button = false)
+
+	undo_button.connect("mouse_entered", func(): self.over_button = true)
+	undo_button.connect("mouse_exited", func(): self.over_button = false)
+
+	info_label.connect("mouse_entered", func(): self.over_title_bar = true)
+	info_label.connect("mouse_exited", func(): self.over_title_bar = false)
+
+	## Selection Area
+	tile_selection_area.connect("mouse_entered", func(): self.over_selection_area = true)
+	tile_selection_area.connect("mouse_exited", func(): self.over_selection_area = false)
+
+	object_selection_area.connect("mouse_entered", func(): self.over_selection_area = true)
+	object_selection_area.connect("mouse_exited", func(): self.over_selection_area = false)
+
+	## Status Bar
+	status_bar.connect("mouse_entered", func(): self.over_status_bar = true)
+	status_bar.connect("mouse_exited", func(): self.over_status_bar = false)
+
+	status_label.connect("mouse_entered", func(): self.over_status_bar = true)
+	status_label.connect("mouse_exited", func(): self.over_status_bar = false)
+
+	page_info_label.connect("mouse_entered", func(): self.over_status_bar = true)
+	page_info_label.connect("mouse_exited", func(): self.over_status_bar = false)
+
+	hide_panel_button.connect("mouse_entered", func(): self.over_button = true)
+	hide_panel_button.connect("mouse_exited", func(): self.over_button = false)
+
+	prev_button.connect("mouse_entered", func(): self.over_button = true)
+	prev_button.connect("mouse_exited", func(): self.over_button = false)
+
+	next_button.connect("mouse_entered", func(): self.over_button = true)
+	next_button.connect("mouse_exited", func(): self.over_button = false)
+
 func _process(delta):
 	# Load / Save Map
-	if Input.is_action_just_pressed("load-map") and not menu_open:
-		_load_map()
-	elif Input.is_action_just_pressed("save-map") and not menu_open:
-		_save_map()
-
-	# Toggle Insert / Erase Modes
-	if Input.is_action_just_pressed("erase-mode") and not menu_open:
-		is_erase_mode = true
-	elif Input.is_action_just_pressed("insert-mode") and not menu_open:
-		is_erase_mode = false
+	if Input.is_action_just_pressed("load-map") and \
+			not menu_open:
+		_load_map()					# L
+	elif Input.is_action_just_pressed("save-map") and \
+			not menu_open:
+		_save_map()					# S
 
 	# Mode Switches
-	if Input.is_action_just_pressed("toggle-mode") and not menu_open:
+	if Input.is_action_just_pressed("toggle-mode") and \
+			not menu_open:
 		change_map_mode()			# M
-	elif Input.is_action_just_pressed("mode-tile") and not menu_open:
+	elif Input.is_action_just_pressed("mode-tile") and \
+			not menu_open:
 		change_to_tile_mode()		# T
-	elif Input.is_action_just_pressed("mode-object") and not menu_open:
+	elif Input.is_action_just_pressed("mode-object") and \
+			not menu_open:
 		change_to_object_mode()		# O
-	elif Input.is_action_just_pressed("mode-unpassable") and not menu_open:
-		change_to_unpassable_mode()	# U
+	elif Input.is_action_just_pressed("mode-unpassable") and \
+			not menu_open:
+		change_to_unpassable_mode()	# P
+
+	# Toggle Objects
+	if Input.is_action_just_pressed("toggle-objects") \
+			and not menu_open:
+		_toggle_hide_objects()
+
+	# Undo Tile
+	if Input.is_action_just_pressed("undo") and \
+			not menu_open:
+		undo()
+
+	# Toggle Insert / Erase Modes
+	if Input.is_action_just_pressed("insert-mode") and \
+			not menu_open:
+		is_erase_mode = false		# I
+	elif Input.is_action_just_pressed("erase-mode") and \
+			not menu_open:
+		is_erase_mode = true		# D | E | X
 
 	# Page Switching
-	if Input.is_action_just_pressed("next-page") and not menu_open:
+	if Input.is_action_just_pressed("next-page") and \
+			not menu_open:
 		_next_page()
-	elif Input.is_action_just_pressed("previous-page") and not menu_open:
+	elif Input.is_action_just_pressed("previous-page") and \
+			not menu_open:
 		_prev_page()
-	elif Input.is_action_just_pressed("toggle-selection-area") and not menu_open:
-		_toggle_selection_area()
+	elif Input.is_action_just_pressed("show-selection-area") and \
+			not menu_open:
+		_toggle_selection_area(true, true)
+	elif Input.is_action_just_pressed("hide-selection-area") and \
+			not menu_open:
+		_toggle_selection_area(true, false)
 
 	# Cursor
 	var grabbing_map := false
@@ -169,16 +249,6 @@ func _process(delta):
 	if cursor_state in cursor_renderer.cursors:
 		Input.set_custom_mouse_cursor(cursor_renderer.cursors[cursor_state].get_frame_texture(cursor_renderer.cursors[cursor_state].current_frame), Input.CURSOR_ARROW, Vector2(0, 0))
 
-	# Toggle Objects
-	if Input.is_action_just_pressed("toggle-objects") \
-			and not menu_open:
-		_toggle_hide_objects()
-
-	# Undo Tile
-	if Input.is_action_just_pressed("undo") \
-			and not menu_open:
-		undo()
-
 	var mouse_position := get_global_mouse_position()
 	var mouse_coordinate := Vector2i(get_global_mouse_position()) / Resources.tile_size_vector
 	var snapped_mouse_position := (Vector2i(get_global_mouse_position()) - (Resources.tile_size_vector / 2)).snapped(Resources.tile_size_vector)
@@ -186,10 +256,9 @@ func _process(delta):
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
 			not is_erase_mode and \
-			mouse_on_tilemap and \
-			not menu_open and \
-			not over_title_bar:
-		if mouse_coordinate.x >= 0 and mouse_coordinate.y >= 0 and not over_title_bar and mouse_on_tilemap:
+			mouse_over_tile_map() and \
+			not menu_open:
+		if mouse_coordinate.x >= 0 and mouse_coordinate.y >= 0:
 			if mode == MapMode.TILE:
 				if current_tile_index not in map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
 					map_renderer.add_tile_to_tile_set_source(self, mouse_coordinate, current_tile_index)
@@ -247,8 +316,8 @@ func _process(delta):
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
 			is_erase_mode and \
+			mouse_over_tile_map() and \
 			not menu_open and \
-			not over_title_bar and \
 			mouse_coordinate.x >= 0 and \
 			mouse_coordinate.y >= 0:
 			if mode == MapMode.TILE:
@@ -291,8 +360,8 @@ func _process(delta):
 	# Copy Tile on Right Mouse Button (RMB) - Default Mode
 	if Input.is_action_just_pressed("copy-tile") and \
 			cursor_state == "Idle" and \
-			not menu_open and \
-			not over_title_bar:
+			mouse_over_tile_map() and \
+			not menu_open:
 		var cursor_tile_coord := get_global_mouse_position()
 		cursor_tile_coord.x = floor(cursor_tile_coord.x / Resources.tile_size)
 		cursor_tile_coord.y = floor(cursor_tile_coord.y / Resources.tile_size)
@@ -317,10 +386,9 @@ func _process(delta):
 	if mouse_coordinate.x >= 0 and \
 			mouse_coordinate.y >= 0 and \
 			mouse_position.y >= 4 and \
-			mouse_on_tilemap and \
 			not grabbing_map and \
-			not menu_open and \
-			not over_title_bar:
+			mouse_over_tile_map() and \
+			not menu_open:
 		var adjusted_height := Vector2i(0, 0)
 		if mode == MapMode.OBJECT:
 			var object_height: int = map_renderer.sobj_renderer.sobj.objects[current_object_index].height
@@ -337,7 +405,7 @@ func _process(delta):
 	
 	if Input.is_action_just_pressed("zoom-in") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
-			mouse_on_tilemap and \
+			mouse_over_tile_map() and \
 			not menu_open:
 		if $Camera2D.zoom.x <= camera_max_zoom:
 			$Camera2D.zoom.x *= 1.5
@@ -345,17 +413,19 @@ func _process(delta):
 			$Camera2D.zoom.y *= 1.5
 	if Input.is_action_just_pressed("zoom-out") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
-			mouse_on_tilemap and \
+			mouse_over_tile_map() and \
 			not menu_open:
 		if $Camera2D.zoom.x >= camera_min_zoom:
 			$Camera2D.zoom.x /= 1.5
 		if $Camera2D.zoom.y >= camera_min_zoom:
 			$Camera2D.zoom.y /= 1.5
 
-	if mouse_on_tilemap and not over_title_bar and not menu_open:
+	if mouse_over_tile_map() and \
+			not menu_open:
 		var info_tile_index = tile_map.get_cell_source_id(0, mouse_coordinate)
 		info_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
-	elif not mouse_on_tilemap and not over_title_bar and not menu_open:
+	elif not mouse_over_tile_map() and \
+			not menu_open:
 		if mode == MapMode.TILE:
 			info_label.text = "Tile Index: " + str(self.hover_tile_index)
 		elif mode == MapMode.OBJECT:
@@ -363,11 +433,19 @@ func _process(delta):
 
 func _input(event):
 	if event is InputEventMouseButton:
-		if not mouse_on_tilemap:
+		if not mouse_over_tile_map() and \
+				not menu_open:
 			if mode == MapMode.TILE:
 				update_cursor_preview(self.hover_tile_index)
 			elif mode == MapMode.OBJECT:
 				update_cursor_preview(self.hover_object_index)
+
+func mouse_over_tile_map() -> bool:
+	return	over_window and \
+			not over_button and \
+			not over_title_bar and \
+			not over_selection_area and \
+			not over_status_bar
 
 func set_target_box_color(color: Color) -> void:
 	$TargetBox/Top.color = color
@@ -436,10 +514,6 @@ func clear_container(container: Container) -> void:
 			item = null
 
 func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
-	tile_selection_area.visible = true
-	object_selection_area.visible = false
-	next_button.visible = true
-	prev_button.visible = true
 	clear_container(tile_set_container)
 	start_tile = max(1, start_tile) # Skip tile[0] (blank)
 	var end_tile = min(start_tile + tile_count + 1, map_renderer.tile_renderer.tbl.tile_count)
@@ -449,13 +523,9 @@ func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
 		tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(i, palette_index))
 		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
 		tile_set_container.add_child(tile)
-	status_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
+	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 
 func load_objectset(start_object: int=0, object_count: int=object_page_size) -> void:
-	object_selection_area.visible = true
-	tile_selection_area.visible = false
-	next_button.visible = true
-	prev_button.visible = true
 	clear_container(object_set_container)
 	var end_object = min(start_object + object_count + 1, map_renderer.sobj_renderer.sobj.object_count)
 	for i in range(start_object, end_object - 1):
@@ -468,7 +538,7 @@ func load_objectset(start_object: int=0, object_count: int=object_page_size) -> 
 		object_texture.size_flags_vertical = Control.SIZE_SHRINK_END
 		object_texture.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		object_set_container.add_child(object_texture)
-	status_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
+	page_info_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
 
 func update_file_dialog_path() -> void:
 	var map_file_name := ("TK%06d.cmp" % map_id)
@@ -541,10 +611,21 @@ func _on_file_dialog_file_selected(path):
 		map_renderer.cmp.update_map(max_width, max_height, map_tiles)
 		map_renderer.cmp.save_to_file(path)
 
-	menu_open = false
+	set_menu_closed()
+
+func set_menu_closed() -> void:
+	var menu_closed_timer := Timer.new()
+	
+	menu_closed_timer.wait_time = 0.5
+	menu_closed_timer.one_shot = true
+	menu_closed_timer.autostart = true
+
+	menu_closed_timer.connect("timeout", func(): self.menu_open = false)
+	
+	add_child(menu_closed_timer)
 
 func _on_file_dialog_canceled():
-	menu_open = false
+	set_menu_closed()
 
 func change_map_mode() -> void:
 	# Cycle Modes (Icon is the NEXT mode, does that make sense?)
@@ -651,37 +732,49 @@ func _on_undo_pressed():
 	undo()
 
 func change_to_tile_mode() -> void:
+	_toggle_selection_area(true, false)
 	mode = MapMode.TILE
 	tile_mode_button.texture_normal = load("res://Images/contrast-bright.svg")
 	object_mode_button.texture_normal = load("res://Images/extension-dark.svg")
 	unpassable_mode_button.texture_normal = load("res://Images/placeholder-dark.svg")
+	hide_panel_button.visible = true
+	next_button.visible = true
+	prev_button.visible = true
 	unpassables.visible = false
 	load_tileset()
 	update_cursor_preview(current_tile_index)
+	_toggle_selection_area(true, true)
 
 func _on_tile_mode_pressed():
 	change_to_tile_mode()
 
 func change_to_object_mode() -> void:
+	_toggle_selection_area(true, false)
 	mode = MapMode.OBJECT
 	tile_mode_button.texture_normal = load("res://Images/contrast-dark.svg")
 	object_mode_button.texture_normal = load("res://Images/extension-bright.svg")
 	unpassable_mode_button.texture_normal = load("res://Images/placeholder-dark.svg")
+	hide_panel_button.visible = true
+	next_button.visible = true
+	prev_button.visible = true
 	unpassables.visible = false
 	load_objectset()
 	update_cursor_preview(current_object_index)
+	_toggle_selection_area(true, true)
 
 func _on_object_mode_pressed():
 	change_to_object_mode()
 
 func change_to_unpassable_mode() -> void:
+	_toggle_selection_area(true, false)
 	mode = MapMode.UNPASSABLE
 	tile_mode_button.texture_normal = load("res://Images/contrast-dark.svg")
 	object_mode_button.texture_normal = load("res://Images/extension-dark.svg")
 	unpassable_mode_button.texture_normal = load("res://Images/placeholder-bright.svg")
 	tile_selection_area.visible = false
 	object_selection_area.visible = false
-	status_label.text = ""
+	page_info_label.text = ""
+	hide_panel_button.visible = false
 	next_button.visible = false
 	prev_button.visible = false
 	unpassables.visible = true
@@ -690,13 +783,37 @@ func change_to_unpassable_mode() -> void:
 func _on_unpassable_mode_pressed():
 	change_to_unpassable_mode()
 
-func _toggle_selection_area() -> void:
+func _toggle_selection_area(
+		override: bool=false,
+		override_value: bool=false) -> void:
+	var hidden: bool = false
 	if mode == MapMode.TILE:
-		tile_selection_area.visible = not tile_selection_area.visible
+		tile_selection_area.visible = not tile_selection_area.visible \
+			if not override else override_value
+		hidden = not tile_selection_area.visible
+		object_selection_area.visible = false
 	elif mode == MapMode.OBJECT:
-		object_selection_area.visible = not object_selection_area.visible
+		object_selection_area.visible = not object_selection_area.visible \
+			if not override else override_value
+		hidden = not object_selection_area.visible
+		tile_selection_area.visible = false
 	elif mode == MapMode.UNPASSABLE:
-		unpassables.visible = not unpassables.visible
+		unpassables.visible = not unpassables.visible \
+			if not override else override_value
+		hidden = true
+		tile_selection_area.visible = false
+		object_selection_area.visible = false
+	
+	if hidden:
+		hide_panel_button.texture_normal = load("res://Images/eye-crossed.svg")
+		hide_panel_button.texture_pressed = load("res://Images/eye-crossed.svg")
+		hide_panel_button.texture_hover = load("res://Images/eye-crossed-dark.svg")
+		hide_panel_button.texture_disabled = load("res://Images/eye-crossed-dark.svg")
+	else:
+		hide_panel_button.texture_normal = load("res://Images/eye.svg")
+		hide_panel_button.texture_pressed = load("res://Images/eye.svg")
+		hide_panel_button.texture_hover = load("res://Images/eye-dark.svg")
+		hide_panel_button.texture_disabled = load("res://Images/eye-crossed-dark.svg")
 
 func _on_hide_panel_pressed():
 	_toggle_selection_area()

@@ -9,7 +9,7 @@ var min_zoom = 0.25
 var max_zoom = 2
 
 func _input(event):
-	if event.is_action("mapper-move-map"):
+	if event.is_action("move-map"):
 		if event.is_pressed():
 			mouse_start_pos = event.position
 			screen_start_position = position

@@ -28,25 +28,30 @@ your system's NexusTK directories
 the first map that is opened when you start TKMapper
 
 * Insert or Delete:
-    * `i`: Insert Mode: This allows you to insert tiles/objects
-    * `d`: Delete Mode: This allows you to delete tiles/objects
+    * `i|1`: Insert Mode: This allows you to insert tiles/objects
+    * `d|e|x|2`: Delete Mode: This allows you to delete tiles/objects
 
 * The 3 modes types are:
-    * `t`: Tile Mode: Edits the ground tiles
-    * `o`: Object Mode: Edits the objects
-    * `p`: Unpassable Mode: Edits the unpassable tiles
+    * `t|3`: Tile Mode: Edits the ground tiles
+    * `o|4`: Object Mode: Edits the objects
+    * `p|5`: Unpassable Mode: Edits the unpassable tiles
 
 ### Keyboard Shortcuts
 
-* `i`: Insert Mode: Allows inserting tiles/objects
-* `d`: Delete Mode: Allows deleting tiles/objects
-* `t`: Tile Mode: Toggles Tile Mode
-* `o`: Object Mode: Toggles Object Mode
-* `p`: Unpassable Mode: Toggles Unpassable Mode
-* `m`: Toggle Modes: Toggles between modes: Tile -> Object -> Unpassable
-* `s`: Save Map: Opens Save Map Dialog
 * `l`: Load Map: Opens Load Map Dialog
-* `h`: Hide Objects: Toggles Objects (for ground visibility)
+* `s`: Save Map: Opens Save Map Dialog
+* `t|3`: Tile Mode: Toggles Tile Mode
+* `o|4`: Object Mode: Toggles Object Mode
+* `p|5`: Unpassable Mode: Toggles Unpassable Mode
+* `m`: Toggle Modes: Toggles between Modes: Tile -> Object -> Unpassable
+* `h|6`: Hide Objects: Toggles Objects (for ground visibility)
+* `u|\``: Undo: Undoes The Previous Change
+* `i|1`: Insert Mode: Enters Insert Mode for Tiles/Objects
+* `d|e|x|2`: Delete Mode: Enters Delete Mode for Tiles/Objects
+* `LEFT`: Loads Previous Tile/Object Selection Page
+* `RIGHT`: Loads Next Tile/Object Selection Page
+* `UP`: Shows Tile/Object Selection Page
+* `DOWN`: Hides Tile/Object Selection Page
 
 ### Mouse Shortcuts
 

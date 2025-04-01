@@ -252,7 +252,7 @@ func _process(delta):
 	var mouse_position := get_global_mouse_position()
 	var mouse_coordinate := Vector2i(get_global_mouse_position()) / Resources.tile_size_vector
 	var snapped_mouse_position := (Vector2i(get_global_mouse_position()) - (Resources.tile_size_vector / 2)).snapped(Resources.tile_size_vector)
-	# Change Tile on Left Mouse Button (LMB) - Default Mode
+	# Change Tile on Left Mouse Button (LMB) - Insert Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
 			not is_erase_mode and \

@@ -10,6 +10,8 @@ var tiles: Array[CmpTile] = []
 
 func _init(
 		map_id: int) -> void:
+	var file_position: int = 4  # CMAP
+
 	var map_file_name := ("TK%06d.cmp" % map_id)
 	if FileAccess.file_exists(Resources.map_dir + "/" + map_file_name):
 		super(map_file_name, Resources.map_dir)
@@ -17,13 +19,14 @@ func _init(
 		super(map_file_name, Resources.local_map_dir)
 
 	self.map_id = map_id
-	file_position = 4  # CMAP
 
-	var dims := read_u32()
+	var dims := read_u32(file_position)
+	file_position += 4
 	self.width = dims & 0x0000FFFF
 	self.height = dims >> 0x10
 
-	var compressed_data := read_bytes(file_size - 4)
+	var compressed_data := read_bytes(file_position, file_size - 4)
+	file_position += file_size - 4
 	var map_data := compressed_data.decompress_dynamic(width * height * 6, FileAccess.COMPRESSION_DEFLATE)
 
 	for i in range(int(len(map_data) / 6)):

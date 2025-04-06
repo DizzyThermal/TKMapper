@@ -8,7 +8,10 @@ const NTK_TileSetSource = preload("res://DataTypes/NTK_TileSetSource.gd")
 var tile_renderer: NTK_TileRenderer = null
 var sobj_renderer: NTK_SObjRenderer = null
 
+const MAX_TILE_THREADS: int = 16
+
 var cmp: CmpFileHandler = null
+var tile_set: TileSet
 var map_id := -1
 var objects := {}
 var ntk_tileset_source := NTK_TileSetSource.new()
@@ -155,44 +158,76 @@ func add_tile_to_tile_set_source(
 		tile_set_source.create_tile(Vector2i(0, 0))
 	parent.tile_map.tile_set.add_source(tile_set_source, tile_index)
 
-func create_tile_set(map_id: int) -> TileSet:
-	var tile_set := TileSet.new()
+func prerender_tile(tile_index: int) -> void:
+	var palette_index = tile_renderer.tbl.palette_indices[tile_index]
+	var frame := tile_renderer.get_frame(tile_index)
+	var palette := tile_renderer.pal.get_palette(palette_index)
+	var tile_set_source := TileSetAtlasSource.new()
+	tile_set_source.texture_region_size = Resources.tile_size_vector
+	if palette.is_animated and \
+			Resources.arrays_intersect(
+				palette.animation_indices,
+				frame.raw_pixel_data_array):
+		var animation_count := len(palette.animation_indices) / len(palette.animation_ranges)
+		tile_set_source.texture = ImageTexture.create_from_image(
+			tile_renderer.render_animated_frame(tile_index,
+				animation_count,
+				palette_index))
+		tile_set_source.create_tile(Vector2i(0, 0))
+		tile_set_source.set_tile_animation_columns(Vector2i(0, 0), animation_count)
+		tile_set_source.set_tile_animation_frames_count(Vector2i(0, 0), animation_count)
+		for j in range(animation_count):
+			tile_set_source.set_tile_animation_frame_duration(Vector2i(0, 0), j, 0.5)
+	else:
+		tile_set_source.texture = ImageTexture.create_from_image(
+			tile_renderer.render_frame(
+				tile_index,
+				palette_index,
+				false))
+		tile_set_source.create_tile(Vector2i(0, 0))
+	self.tile_set.add_source(tile_set_source, tile_index)
+
+func create_tile_set(map_id: int) -> void:
+	tile_set = TileSet.new()
 	tile_set.tile_size = Resources.tile_size_vector
 
-	var map_id_str := str(map_id)
-	for i in range(len(cmp.tiles)):
-		var tile_index := cmp.tiles[i].ab_index
-		if tile_index == 65535:
-			tile_index = 0
-		var palette_index = tile_renderer.tbl.palette_indices[tile_index]
-		var frame := tile_renderer.get_frame(tile_index)
-		var palette := tile_renderer.pal.get_palette(palette_index)
-		var tile_set_source := TileSetAtlasSource.new()
-		tile_set_source.texture_region_size = Resources.tile_size_vector
-		if palette.is_animated and \
-				Resources.arrays_intersect(
-					palette.animation_indices,
-					frame.raw_pixel_data_array):
-			var animation_count := len(palette.animation_indices) / len(palette.animation_ranges)
-			tile_set_source.texture = ImageTexture.create_from_image(
-				tile_renderer.render_animated_frame(tile_index,
-					animation_count,
-					palette_index))
-			tile_set_source.create_tile(Vector2i(0, 0))
-			tile_set_source.set_tile_animation_columns(Vector2i(0, 0), animation_count)
-			tile_set_source.set_tile_animation_frames_count(Vector2i(0, 0), animation_count)
-			for j in range(animation_count):
-				tile_set_source.set_tile_animation_frame_duration(Vector2i(0, 0), j, 0.5)
-		else:
-			tile_set_source.texture = ImageTexture.create_from_image(
-				tile_renderer.render_frame(
-					tile_index,
-					palette_index,
-					false))
-			tile_set_source.create_tile(Vector2i(0, 0))
-		tile_set.add_source(tile_set_source, tile_index)
-
-	return tile_set
+	# Threaded Tile Renderering
+	var unique_tile_ids: Array[int] = []
+	for tile in cmp.tiles:
+		var tile_index: int = tile.ab_index
+		if tile_index not in unique_tile_ids and \
+				tile_index != 0 and \
+				tile_index != 65535:
+			unique_tile_ids.append(tile_index)
+	
+	# Create Thread Pool
+	var thread_pool: Array[Thread] = []
+	while len(unique_tile_ids) > 0:
+		# Prune Finished Threads
+		var thread_indices_to_prune: Array[int] = []
+		for thread_idx in range(len(thread_pool)):
+			if thread_pool[thread_idx].is_alive():
+				thread_indices_to_prune.append(thread_idx)
+		thread_indices_to_prune.reverse()
+		for idx in thread_indices_to_prune:
+			thread_pool.remove_at(idx)
+		
+		# Check if can create more threads
+		if len(thread_pool) < MAX_TILE_THREADS:
+			# Create Tile Prerender Thread
+			var tile_id: int = unique_tile_ids.pop_back()
+			thread_pool.append(Thread.new())
+			thread_pool[-1].start(func(): self.prerender_tile(tile_id))
+	
+	# Wait for all threads to finish
+	var all_finished := false
+	while not all_finished:
+		all_finished = true
+		for thread in thread_pool:
+			if thread.is_alive():
+				all_finished = false
+				break
+		thread_pool.clear()
 
 func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int) -> void:
 	var tile_map: TileMap = parent.tile_map
@@ -200,7 +235,8 @@ func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, hei
 
 	var tile_set: TileSet = TileSet.new()
 	tile_set.tile_size = Resources.tile_size_vector
-	tile_map.tile_set = create_tile_set(map_id)
+	create_tile_set(map_id)
+	tile_map.tile_set = self.tile_set
 
 	var map_area := Rect2i(x, y, width, height)
 	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))

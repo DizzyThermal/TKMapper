@@ -50,6 +50,9 @@ var map_tiles := []
 var map_objects := {}
 var map_unpassables := {}
 
+# Selection Area
+var thread_ids: Array[int] = []
+
 # Scene Nodes
 @onready var tile_map := $TileMap
 @onready var objects := $Objects
@@ -513,10 +516,24 @@ func clear_container(container: Container) -> void:
 			item.queue_free()
 			item = null
 
+func render_tile(thread_tile_index: int) -> void:
+	var tile_index: int = thread_ids[thread_tile_index]
+	var palette_index := map_renderer.tile_renderer.tbl.palette_indices[tile_index]
+	map_renderer.tile_renderer.render_frame(tile_index, palette_index)
+
 func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
-	clear_container(tile_set_container)
-	start_tile = max(1, start_tile) # Skip tile[0] (blank)
 	var end_tile = min(start_tile + tile_count + 1, map_renderer.tile_renderer.tbl.tile_count)
+
+	# Collect Unique Tiles
+	thread_ids.clear()
+	thread_ids.append_array(range(max(1, start_tile), end_tile))
+	
+	# Threaded Tile Renderering
+	var task_id : int = WorkerThreadPool.add_group_task(render_tile, thread_ids.size(), -1, true)
+	WorkerThreadPool.wait_for_group_task_completion(task_id)
+	
+	# Load Tile Selection Area
+	clear_container(tile_set_container)
 	for i in range(max(1, start_tile), end_tile):
 		var tile := TextureRect.new()
 		var palette_index := map_renderer.tile_renderer.tbl.palette_indices[i]
@@ -525,9 +542,23 @@ func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
 		tile_set_container.add_child(tile)
 	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 
+func render_object(thread_object_index: int) -> void:
+	var object_index: int = thread_ids[thread_object_index]
+	map_renderer.sobj_renderer.render_object(object_index)
+
 func load_objectset(start_object: int=0, object_count: int=object_page_size) -> void:
-	clear_container(object_set_container)
 	var end_object = min(start_object + object_count + 1, map_renderer.sobj_renderer.sobj.object_count)
+	
+	# Collect Unique Objects
+	thread_ids.clear()
+	thread_ids.append_array(range(start_object, end_object))
+	
+	# Threaded Tile Renderering
+	var task_id : int = WorkerThreadPool.add_group_task(render_object, thread_ids.size(), -1, true)
+	WorkerThreadPool.wait_for_group_task_completion(task_id)
+	
+	# Load Object Selection Area
+	clear_container(object_set_container)
 	for i in range(start_object, end_object - 1):
 		var object_texture := TextureRect.new()
 		var palette_index := map_renderer.tile_renderer.tbl.palette_indices[i]

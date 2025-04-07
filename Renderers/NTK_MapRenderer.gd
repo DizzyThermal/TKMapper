@@ -8,13 +8,12 @@ const NTK_TileSetSource = preload("res://DataTypes/NTK_TileSetSource.gd")
 var tile_renderer: NTK_TileRenderer = null
 var sobj_renderer: NTK_SObjRenderer = null
 
-const MAX_TILE_THREADS: int = 16
-
 var cmp: CmpFileHandler = null
 var tile_set: TileSet
 var map_id := -1
 var objects := {}
 var ntk_tileset_source := NTK_TileSetSource.new()
+var thread_ids: Array[int] = []
 
 func _init():
 	var start_time := Time.get_ticks_msec()
@@ -158,7 +157,8 @@ func add_tile_to_tile_set_source(
 		tile_set_source.create_tile(Vector2i(0, 0))
 	parent.tile_map.tile_set.add_source(tile_set_source, tile_index)
 
-func prerender_tile(tile_index: int) -> void:
+func prerender_tile(thread_index: int) -> void:
+	var tile_index: int = thread_ids[thread_index]
 	var palette_index = tile_renderer.tbl.palette_indices[tile_index]
 	var frame := tile_renderer.get_frame(tile_index)
 	var palette := tile_renderer.pal.get_palette(palette_index)
@@ -191,43 +191,18 @@ func create_tile_set(map_id: int) -> void:
 	tile_set = TileSet.new()
 	tile_set.tile_size = Resources.tile_size_vector
 
-	# Threaded Tile Renderering
-	var unique_tile_ids: Array[int] = []
+	# Collect Unique Tiles
+	thread_ids.clear()
 	for tile in cmp.tiles:
 		var tile_index: int = tile.ab_index
-		if tile_index not in unique_tile_ids and \
+		if tile_index not in thread_ids and \
 				tile_index != 0 and \
 				tile_index != 65535:
-			unique_tile_ids.append(tile_index)
+			thread_ids.append(tile_index)
 	
-	# Create Thread Pool
-	var thread_pool: Array[Thread] = []
-	while len(unique_tile_ids) > 0:
-		# Prune Finished Threads
-		var thread_indices_to_prune: Array[int] = []
-		for thread_idx in range(len(thread_pool)):
-			if thread_pool[thread_idx].is_alive():
-				thread_indices_to_prune.append(thread_idx)
-		thread_indices_to_prune.reverse()
-		for idx in thread_indices_to_prune:
-			thread_pool.remove_at(idx)
-		
-		# Check if can create more threads
-		if len(thread_pool) < MAX_TILE_THREADS:
-			# Create Tile Prerender Thread
-			var tile_id: int = unique_tile_ids.pop_back()
-			thread_pool.append(Thread.new())
-			thread_pool[-1].start(func(): self.prerender_tile(tile_id))
-	
-	# Wait for all threads to finish
-	var all_finished := false
-	while not all_finished:
-		all_finished = true
-		for thread in thread_pool:
-			if thread.is_alive():
-				all_finished = false
-				break
-		thread_pool.clear()
+	# Threaded Tile Renderering
+	var task_id : int = WorkerThreadPool.add_group_task(prerender_tile, thread_ids.size(), -1, true)
+	WorkerThreadPool.wait_for_group_task_completion(task_id)
 
 func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int) -> void:
 	var tile_map: TileMap = parent.tile_map
@@ -301,11 +276,37 @@ func create_object(parent: Node2D, sobj_index: int, location: Vector2i) -> void:
 
 	parent.objects.add_child(obj_sprite)
 
+func render_object(thread_index: int) -> void:
+	var sobj_index: int = thread_ids[thread_index]
+	sobj_renderer.render_object(sobj_index)
+
 func create_objects(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int) -> void:
-	clear_objects(parent.objects)
-	var map_area := Rect2i(x, y, width, height)
 	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))
 	var end_i: int = min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
+	var map_area := Rect2i(x, y, width, height)
+	
+	# Collect Unique Objects
+	thread_ids.clear()
+	for i in range(start_i, end_i):
+		var tile_position := Vector2i((i % cmp.width), (i / cmp.width))
+		if not map_area.has_point(tile_position):
+			continue
+		var sobj_index := cmp.tiles[i].sobj_index
+		if sobj_index < 1:
+			continue
+		var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
+		var sobj_height := sobj.height
+		if sobj_height < 1:
+			continue
+		# Add Unique SObjs
+		if sobj_index not in thread_ids:
+			thread_ids.append(sobj_index)
+	
+	# Threaded Object Renderering
+	var task_id : int = WorkerThreadPool.add_group_task(render_object, thread_ids.size(), -1, true)
+	WorkerThreadPool.wait_for_group_task_completion(task_id)
+
+	clear_objects(parent.objects)
 	for i in range(start_i, end_i):
 		var tile_position := Vector2i((i % cmp.width), (i / cmp.width))
 		if not map_area.has_point(tile_position):

@@ -1,7 +1,7 @@
 extends Node
 
 ## Debug ##
-var debug_renderer_timings := false
+var debug_renderer_timings := true
 
 ## Motion Debug ##
 var debug_motions := false

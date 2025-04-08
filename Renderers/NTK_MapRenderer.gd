@@ -10,7 +10,6 @@ var sobj_renderer: NTK_SObjRenderer = null
 
 var cmp: CmpFileHandler = null
 var tile_set: TileSet
-var map_id := -1
 var objects := {}
 var ntk_tileset_source := NTK_TileSetSource.new()
 var thread_ids: Array[int] = []
@@ -23,18 +22,26 @@ func _init():
 	if Debug.debug_renderer_timings:
 		print("[MapRenderer]: ", Time.get_ticks_msec() - start_time, " ms")
 
-func _load_map(map_id: int):
-	if not cmp or self.map_id != map_id:
-		self.map_id = map_id
-		cmp = CmpFileHandler.new(map_id)
+func get_map_name(map_path: String) -> String:
+	var map_name: String = ""
 
-func render_map(parent: Node2D, map_id: int, render_objects: bool) -> void:
-	_load_map(map_id)
-	render_map_cropped(parent, map_id, 0, 0, cmp.width, cmp.height, render_objects)
+	if "/" in map_path:
+		map_name = map_path.split("/")[-1]
+	elif "\\" in map_path:
+		map_name = map_path.split("\\")[-1]
 
-func render_map_cropped(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int, render_objects: bool=true) -> void:
+	return map_name
+
+func _load_map(map_path: String):
+	cmp = CmpFileHandler.new(map_path)
+
+func render_map(parent: Node2D, map_path: String, render_objects: bool) -> void:
+	_load_map(map_path)
+	render_map_cropped(parent, map_path, 0, 0, cmp.width, cmp.height, render_objects)
+
+func render_map_cropped(parent: Node2D, map_path: String, x: int, y: int, width: int, height: int, render_objects: bool=true) -> void:
 	var start_time := Time.get_ticks_msec()
-	_load_map(map_id)
+	_load_map(map_path)
 	if width == 0 or height == 0:
 		x = 0
 		y = 0
@@ -49,22 +56,22 @@ func render_map_cropped(parent: Node2D, map_id: int, x: int, y: int, width: int,
 
 	# Create TileMap (Ground)
 	var tilemap_start_time := Time.get_ticks_msec()
-	create_tilemap(parent, map_id, x, y, width, height)
+	create_tilemap(parent, map_path, x, y, width, height)
+	var map_name: String = get_map_name(map_path)
+
 	if Debug.debug_renderer_timings:
-		print("[", ("TK%06d" % map_id), "]: Create TileMap: ", Time.get_ticks_msec() - tilemap_start_time, " ms")
+		print("[", map_name, "]: Create TileMap: ", Time.get_ticks_msec() - tilemap_start_time, " ms")
 	if render_objects:
 		# Create Objects (Static Objects)
 		var objects_start_time := Time.get_ticks_msec()
-		create_objects(parent, map_id, x, y, width, height)
+		create_objects(parent, map_path, x, y, width, height)
 		if Debug.debug_renderer_timings:
-			print("[", ("TK%06d" % map_id), "]: Create Objects: ", Time.get_ticks_msec() - objects_start_time, " ms")
+			print("[", map_name, "]: Create Objects: ", Time.get_ticks_msec() - objects_start_time, " ms")
 	
 	if Debug.debug_renderer_timings:
-		print("[", ("TK%06d" % map_id), "]: ------- Loaded: ", Time.get_ticks_msec() - start_time, " ms\n")
+		print("[", map_name, "]: ------- Loaded: ", Time.get_ticks_msec() - start_time, " ms\n")
 
-func get_map_tile_indices(
-		map_id: int,
-		tile_indices) -> Array:
+func get_map_tile_indices(tile_indices) -> Array:
 	for i in range(len(cmp.tiles)):
 		var tile := cmp.tiles[i]
 		var x := i % cmp.width
@@ -94,8 +101,7 @@ func get_tile_collision(coordinate: Vector2i) -> int:
 	var sobj := sobj_renderer.sobj
 	return sobj.objects[sobj_index].collision
 
-func create_tile_set_source(map_id: int) -> TileSetAtlasSource:
-	var map_id_str := str(map_id)
+func create_tile_set_source() -> TileSetAtlasSource:
 	for i in range(len(cmp.tiles)):
 		var tile_position := Vector2i((i % cmp.width), (i / cmp.width))
 		var tile_index := cmp.tiles[i].ab_index
@@ -187,7 +193,7 @@ func prerender_tile(thread_index: int) -> void:
 		tile_set_source.create_tile(Vector2i(0, 0))
 	self.tile_set.add_source(tile_set_source, tile_index)
 
-func create_tile_set(map_id: int) -> void:
+func create_tile_set() -> void:
 	tile_set = TileSet.new()
 	tile_set.tile_size = Resources.tile_size_vector
 
@@ -204,19 +210,20 @@ func create_tile_set(map_id: int) -> void:
 	var task_id : int = WorkerThreadPool.add_group_task(prerender_tile, thread_ids.size(), -1, true)
 	WorkerThreadPool.wait_for_group_task_completion(task_id)
 
-func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int) -> void:
+func create_tilemap(parent: Node2D, map_path: String, x: int, y: int, width: int, height: int) -> void:
 	var tile_map: TileMap = parent.tile_map
 	tile_map.clear()
 
 	var tile_set: TileSet = TileSet.new()
 	tile_set.tile_size = Resources.tile_size_vector
-	create_tile_set(map_id)
+	create_tile_set()
 	tile_map.tile_set = self.tile_set
 
 	var map_area := Rect2i(x, y, width, height)
 	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))
 	var end_i: int = min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
 	var debug_image: Image = null
+	var map_name: String = get_map_name(map_path)
 	if Debug.debug_map_tilemap:
 		debug_image = Image.create(width * Resources.tile_size, height * Resources.tile_size, false,Image.FORMAT_RGBA8)
 	for i in range(start_i, end_i):
@@ -225,13 +232,13 @@ func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, hei
 			continue
 		var ab_index := cmp.tiles[i].ab_index
 		if tile_position in Debug.debug_tile_coords:
-			print("[", ("TK%06d" % map_id), "]: DEBUG: Frame[", ab_index, "] (", tile_position.x, ", ", tile_position.y, ")")
+			print("[", map_name, "]: DEBUG: Frame[", ab_index, "] (", tile_position.x, ", ", tile_position.y, ")")
 		var frame = tile_renderer.get_frame(ab_index)
 		if ab_index == 0:
-			print("[", ("TK%06d" % map_id), "]: WARNING: Tile AB Index 0: ", tile_position.x, ", ", tile_position.y)
+			print("[", map_name, "]: WARNING: Tile AB Index 0: ", tile_position.x, ", ", tile_position.y)
 			continue
 		if frame.width <= 0 or frame.height <= 0:
-			print("[", ("TK%06d" % map_id), "]: WARNING: Tile[", ab_index, "] Tile Dims: ", frame.width, " x ", frame.height, " | Tile Coords: ", tile_position.x, ", ", tile_position.y)
+			print("[", map_name, "]: WARNING: Tile[", ab_index, "] Tile Dims: ", frame.width, " x ", frame.height, " | Tile Coords: ", tile_position.x, ", ", tile_position.y)
 			continue
 		tile_map.set_cell(0, tile_position, ab_index, Vector2i(0, 0))
 
@@ -240,7 +247,6 @@ func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, hei
 			print("DEBUG:    Palette Index: ", tile_renderer.tbl.palette_indices[ab_index])
 
 		# Overlay Tiles
-		var map_id_str := str(map_id)
 		if Debug.debug_map_tilemap:
 			debug_image.blit_rect(
 				tile_renderer.frames[ab_index],
@@ -249,7 +255,7 @@ func create_tilemap(parent: Node2D, map_id: int, x: int, y: int, width: int, hei
 					(tile_position.x - x) * Resources.tile_size,
 					(tile_position.y - y) * Resources.tile_size))
 	if Debug.debug_map_tilemap:
-		Debug.save_to_desktop(debug_image, "Map-" + str(map_id) + ".png")
+		Debug.save_to_desktop(debug_image, "Map-" + map_name + ".png")
 
 func clear_objects(objects: Node2D):
 	for object in objects.get_children():
@@ -280,7 +286,7 @@ func render_object(thread_index: int) -> void:
 	var sobj_index: int = thread_ids[thread_index]
 	sobj_renderer.render_object(sobj_index)
 
-func create_objects(parent: Node2D, map_id: int, x: int, y: int, width: int, height: int) -> void:
+func create_objects(parent: Node2D, map_path: String, x: int, y: int, width: int, height: int) -> void:
 	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))
 	var end_i: int = min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
 	var map_area := Rect2i(x, y, width, height)

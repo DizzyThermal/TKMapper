@@ -2,23 +2,15 @@ class_name CmpFileHandler extends NTK_FileHandler
 
 const CmpTile = preload("res://DataTypes/CmpTile.gd")
 
-var map_id := -1
 var map_name := ""
 var width := 0
 var height := 0
 var tiles: Array[CmpTile] = []
 
-func _init(
-		map_id: int) -> void:
+func _init(file_path):
+	super(file_path)
+
 	var file_position: int = 4  # CMAP
-
-	var map_file_name := ("TK%06d.cmp" % map_id)
-	if FileAccess.file_exists(Resources.map_dir + "/" + map_file_name):
-		super(map_file_name, Resources.map_dir)
-	elif FileAccess.file_exists(Resources.local_map_dir + "/" + map_file_name):
-		super(map_file_name, Resources.local_map_dir)
-
-	self.map_id = map_id
 
 	var dims := read_u32(file_position)
 	file_position += 4

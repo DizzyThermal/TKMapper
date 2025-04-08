@@ -3,8 +3,14 @@ class_name NTK_FileHandler extends Node
 var file_bytes := PackedByteArray()
 var file_size := 0
 
-func _init(file, directory=Resources.data_dir):
-	file_bytes = file if file is PackedByteArray else FileAccess.get_file_as_bytes(directory + "/" + file)
+func _init(file, data_directory=Resources.data_dir):
+	if file is PackedByteArray:
+		file_bytes = file
+	elif "/" in file or "\\" in file:
+		file_bytes = FileAccess.get_file_as_bytes(file)
+	else:
+		file_bytes = FileAccess.get_file_as_bytes(data_directory + "/" + file)
+
 	file_size = len(file_bytes)
 
 func read_bytes(file_position: int, length: int) -> PackedByteArray:

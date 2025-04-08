@@ -22,11 +22,6 @@ your system's NexusTK directories
 
 ## Usage
 
-* Place Maps to edit in the `Maps/` directory
-
-* `config.json` has a `start_map_id` value that can be updated to change
-the first map that is opened when you start TKMapper
-
 * Insert or Delete:
     * ` i|1 `: Insert Mode: This allows you to insert tiles/objects
     * ` d|e|x|2 `: Delete Mode: This allows you to delete tiles/objects

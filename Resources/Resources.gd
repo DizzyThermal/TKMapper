@@ -6,16 +6,10 @@ var tile_rect := Rect2i(0, 0, tile_size, tile_size)
 var palette_color_count := 256
 
 var config_path := "res://config.json"
-var game_db_path := "res://game.db"
 
 var data_dir := ""
-var map_dir := ""
-var local_map_dir := "res://Maps"
-var mnm_dir := ""
+var last_map_path := ""
 var desktop_dir := ""
-
-# Test Map (Maps/TK010000.cmp)
-var start_map_id: int = 10000
 
 # TODO: See if this is problematic for future items
 var offset_range: Array[int] = []
@@ -57,20 +51,13 @@ func _init():
 
 	var home_dir := OS.get_environment("HOME") if OS.get_environment("HOME") else OS.get_environment("USERPROFILE")
 	self.data_dir = config_json.data_dir.replace("\\", "/").replace("${HOME}", home_dir)
-	self.map_dir = config_json.map_dir.replace("\\", "/").replace("${HOME}", home_dir)
-	self.mnm_dir = config_json.mnm_dir.replace("\\", "/").replace("${HOME}", home_dir)
-	self.start_map_id = config_json.start_map_id
+	self.last_map_path = config_json.last_map_path.replace("\\", "/").replace("${HOME}", home_dir)
 
 	# Check NTK Data Directory
 	if not FileAccess.file_exists(self.data_dir + "/tile.dat"):
 		print("'", self.data_dir, "' is an invalid NTK data directory")
 		OS.kill(OS.get_process_id())
 
-	# Check NTK Map Directory
-	if not FileAccess.file_exists(self.map_dir + "/TK000000.cmp"):
-		print("'", self.map_dir, "' is an invalid NTK map directory")
-		OS.kill(OS.get_process_id())
-	
 	# Generate Offset Range
 	for i in range(48, 144):
 		offset_range.append(i)

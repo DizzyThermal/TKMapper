@@ -5,7 +5,6 @@ var tile_page_size := 170
 var object_page_size := 36
 
 # State Variables
-var map_id := 0
 var map_renderer: NTK_MapRenderer = null
 
 var cursor_renderer: NTK_CursorRenderer = null
@@ -82,7 +81,9 @@ var thread_ids: Array[int] = []
 func _ready():
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
-	file_dialog.current_dir = Resources.map_dir
+	var last_map_path_parts: PackedStringArray = Resources.last_map_path.split("/")
+	var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))
+	file_dialog.current_dir = last_map_dir
 	file_dialog.add_filter("*.cmp", "Map Files")
 
 	map_regex.compile("TK(\\d+).cmp")
@@ -92,8 +93,7 @@ func _ready():
 	$Camera2D.limit_top = -480
 
 	# Load Map
-	map_id = Resources.start_map_id
-	load_map(map_id)
+	load_map(Resources.last_map_path)
 
 	# Create Cursor Tile
 	var tile_index: int = map_tiles[0][0]["ab_index"]
@@ -456,12 +456,12 @@ func set_target_box_color(color: Color) -> void:
 	$TargetBox/Bottom.color = color
 	$TargetBox/Left.color = color
 
-func load_map(map_id) -> void:
+func load_map(map_path: String) -> void:
 	if map_renderer == null:
 		map_renderer = NTK_MapRenderer.new()
 
 	clear_map()
-	map_renderer.render_map(self, map_id, true)
+	map_renderer.render_map(self, map_path, true)
 	map_tiles.clear()
 	for y in range(256):
 		map_tiles.append([])
@@ -471,7 +471,7 @@ func load_map(map_id) -> void:
 				"sobj_index": -1,
 				"unpassable": false,
 			})
-	map_tiles = map_renderer.get_map_tile_indices(map_id, map_tiles)
+	map_tiles = map_renderer.get_map_tile_indices(map_tiles)
 	if current_tile_index == 0:
 		current_tile_index = map_tiles[0][0]["ab_index"]
 	# Add Objects to map_objects dictionary (by coordinate Vector2i)
@@ -571,18 +571,8 @@ func load_objectset(start_object: int=0, object_count: int=object_page_size) -> 
 		object_set_container.add_child(object_texture)
 	page_info_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
 
-func update_file_dialog_path() -> void:
-	var map_file_name := ("TK%06d.cmp" % map_id)
-	if FileAccess.file_exists(Resources.map_dir + "/" + map_file_name):
-		file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
-		file_dialog.current_dir = Resources.map_dir
-	elif FileAccess.file_exists(Resources.local_map_dir + "/" + map_file_name):
-		file_dialog.access = FileDialog.Access.ACCESS_RESOURCES
-		file_dialog.current_dir = Resources.local_map_dir
-
 func _load_map():
 	# Select Map to Load
-	update_file_dialog_path()
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
 	menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
@@ -592,7 +582,6 @@ func _on_load_map_pressed():
 
 func _save_map():
 	# Select Map to Save
-	update_file_dialog_path()
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
 	menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
@@ -611,12 +600,24 @@ func clear_map() -> void:
 			unpassable = null
 	map_renderer.cmp = null
 
-func _on_file_dialog_file_selected(path):
+func update_last_map_path(map_path: String) -> void:
+	Resources.last_map_path = map_path
+	var config_file := FileAccess.open(Resources.config_path, FileAccess.READ)
+	var config_json = JSON.parse_string(config_file.get_as_text())
+	config_file.close()
+	config_json["last_map_path"] = Resources.last_map_path
+	config_file = FileAccess.open(Resources.config_path, FileAccess.WRITE)
+	config_file.store_string(JSON.stringify(config_json, "  ", false))
+	config_file.flush()
+	config_file.close
+
+func _on_file_dialog_file_selected(map_path: String):
 	if file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_OPEN_FILE:
 		# Load Map from Path
-		var result = map_regex.search(path)
-		if result:
-			load_map(int(result.get_string(1)))
+		var result = map_regex.search(map_path)
+		if map_path.ends_with(".cmp"):
+			load_map(map_path)
+			update_last_map_path(map_path)
 	elif file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
 		# Save - Update Cmp
 		var max_width := 0
@@ -640,7 +641,8 @@ func _on_file_dialog_file_selected(path):
 				max_height = row_counter
 
 		map_renderer.cmp.update_map(max_width, max_height, map_tiles)
-		map_renderer.cmp.save_to_file(path)
+		map_renderer.cmp.save_to_file(map_path)
+		update_last_map_path(map_path)
 
 	set_menu_closed()
 

@@ -3,6 +3,5 @@
 
 # TKMapper
 config.db
-config.json
 Maps/*.cmp
 !Maps/TK010000.cmp

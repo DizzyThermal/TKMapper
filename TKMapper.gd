@@ -70,7 +70,7 @@ var thread_ids: Array[int] = []
 @onready var unpassable_mode_button := $CanvasLayer/Title/UnpassableMode
 @onready var hide_objects_button := $CanvasLayer/Title/HideObjects
 @onready var undo_button := $CanvasLayer/Title/Undo
-@onready var info_label := $CanvasLayer/Title/InfoLabel
+@onready var settings_button := $CanvasLayer/Title/Settings
 @onready var status_bar := $CanvasLayer/StatusBar
 @onready var page_info_label := $CanvasLayer/StatusBar/PageInfoLabel
 @onready var status_label := $CanvasLayer/StatusBar/StatusLabel
@@ -78,10 +78,12 @@ var thread_ids: Array[int] = []
 @onready var next_button := $CanvasLayer/StatusBar/NextTile
 @onready var prev_button := $CanvasLayer/StatusBar/PreviousTile
 
-func _ready():
+var initialized: bool = false
+
+func initialize() -> void:
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
-	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").replace("\\", "/").split("/")
+	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
 	var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))
 	file_dialog.current_dir = last_map_dir
 	file_dialog.add_filter("*.cmp", "Map Files")
@@ -93,7 +95,7 @@ func _ready():
 	$Camera2D.limit_top = -480
 
 	# Load Map
-	load_map(Database.get_config_item_value("last_map_path").replace("\\", "/"))
+	load_map(Database.get_config_item_value("last_map_path"))
 
 	# Create Cursor Tile
 	var tile_index: int = map_tiles[0][0]["ab_index"]
@@ -141,9 +143,9 @@ func _ready():
 
 	undo_button.connect("mouse_entered", func(): self.over_button = true)
 	undo_button.connect("mouse_exited", func(): self.over_button = false)
-
-	info_label.connect("mouse_entered", func(): self.over_title_bar = true)
-	info_label.connect("mouse_exited", func(): self.over_title_bar = false)
+	
+	settings_button.connect("mouse_entered", func(): self.over_button = true)
+	settings_button.connect("mouse_exited", func(): self.over_button = false)
 
 	## Selection Area
 	tile_selection_area.connect("mouse_entered", func(): self.over_selection_area = true)
@@ -155,9 +157,6 @@ func _ready():
 	## Status Bar
 	status_bar.connect("mouse_entered", func(): self.over_status_bar = true)
 	status_bar.connect("mouse_exited", func(): self.over_status_bar = false)
-
-	status_label.connect("mouse_entered", func(): self.over_status_bar = true)
-	status_label.connect("mouse_exited", func(): self.over_status_bar = false)
 
 	page_info_label.connect("mouse_entered", func(): self.over_status_bar = true)
 	page_info_label.connect("mouse_exited", func(): self.over_status_bar = false)
@@ -171,7 +170,22 @@ func _ready():
 	next_button.connect("mouse_entered", func(): self.over_button = true)
 	next_button.connect("mouse_exited", func(): self.over_button = false)
 
+	initialized = true
+
 func _process(delta):
+	# Initialize the Mapper
+	if not Database.database_initialized:
+		return
+	if not Database.config_key_exists("data_dir"):
+		print_rich("\n  [b][color=red][ERROR][/color]: Unable to find a valid data directory![/b]\n")
+		for data_dir in Database.default_data_dirs:
+			print_rich("    [b][color=red]Does Not Exist[/color][/b]: [b]%s[/b]" % data_dir)
+		print("\n")
+		get_tree().quit()
+		return
+	if not initialized:
+		initialize()
+
 	# Load / Save Map
 	if Input.is_action_just_pressed("load-map") and \
 			not menu_open:
@@ -426,13 +440,13 @@ func _process(delta):
 	if mouse_over_tile_map() and \
 			not menu_open:
 		var info_tile_index = tile_map.get_cell_source_id(0, mouse_coordinate)
-		info_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
+		status_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
 	elif not mouse_over_tile_map() and \
 			not menu_open:
 		if mode == MapMode.TILE:
-			info_label.text = "Tile Index: " + str(self.hover_tile_index)
+			status_label.text = "Tile Index: " + str(self.hover_tile_index)
 		elif mode == MapMode.OBJECT:
-			info_label.text = "Object Index: " + str(self.hover_object_index)
+			status_label.text = "Object Index: " + str(self.hover_object_index)
 
 func _input(event):
 	if event is InputEventMouseButton:
@@ -601,7 +615,7 @@ func clear_map() -> void:
 	map_renderer.cmp = null
 
 func update_last_map_path(map_path: String) -> void:
-	Database.upsert_config_item("last_map_path", map_path)
+	Database.upsert_config_item("last_map_path", map_path.replace("\\", "/"))
 
 func _on_file_dialog_file_selected(map_path: String):
 	if file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_OPEN_FILE:
@@ -755,6 +769,12 @@ func undo() -> void:
 
 func _on_undo_pressed():
 	undo()
+
+func open_settings() -> void:
+	print("Opening settings")
+
+func _on_settings_pressed():
+	open_settings()
 
 func change_to_tile_mode() -> void:
 	_toggle_selection_area(true, false)

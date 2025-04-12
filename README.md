@@ -11,14 +11,7 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 * Import the `project.godot` file in Godot 4.x and Run the
 application (F5) - the main scene is: `TKMapper.tscn`
 
-* If you don't have NexusTK in a predictable location, the program
-won't start (see next step)
-
-* `config.json.template` is copied to `config.json` (if
-`config.json` does not exist) - Fill out this config to point to
-your system's NexusTK directories
-
-* Re-run the application (F5) and TKMapper should hopefully launch
+* Run the application (F5) and TKMapper should start
 
 ## Usage
 
@@ -67,8 +60,3 @@ your system's NexusTK directories
 
 * Delete Mode (Over Map):
     * ` Left Mouse Button `: Deletes the tile or object under the mouse cursor
-
-## Notes
-
-* A `config.db` SQLite3 database tracks the `last_map_path` to load the last map
-  that was open in the editor

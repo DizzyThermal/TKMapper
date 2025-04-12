@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=33 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -28,7 +28,10 @@
 [ext_resource type="Texture2D" uid="uid://b2hxk0rnam5ey" path="res://Images/placeholder-dark.svg" id="17_7d3bf"]
 [ext_resource type="Texture2D" uid="uid://dtenejynopc0c" path="res://Images/chevron-left-bright.svg" id="19_1cfy8"]
 [ext_resource type="Texture2D" uid="uid://b4i4nao3mm0nw" path="res://Images/chevron-right-bright.svg" id="22_c3cgk"]
+[ext_resource type="Texture2D" uid="uid://ca2vvrhuuunx3" path="res://Images/settings.svg" id="24_u1l8f"]
 [ext_resource type="Texture2D" uid="uid://bw4ijvrprwbpt" path="res://Images/undo-bright.svg" id="25_hk2co"]
+[ext_resource type="Texture2D" uid="uid://c6qjnn8ubwgen" path="res://Images/settings-bright.svg" id="25_sij56"]
+[ext_resource type="Texture2D" uid="uid://c2bppf7m6bi2u" path="res://Images/settings-dark.svg" id="26_rij7b"]
 
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
@@ -152,17 +155,19 @@ texture_pressed = ExtResource("15_2a4ub")
 texture_hover = ExtResource("25_hk2co")
 texture_disabled = ExtResource("16_4k3qj")
 
-[node name="InfoLabel" type="Label" parent="CanvasLayer/Title"]
+[node name="Settings" type="TextureButton" parent="CanvasLayer/Title"]
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = -1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -100.0
-offset_top = 7.0
-offset_right = -4.0
-offset_bottom = 30.0
-grow_horizontal = 0
-horizontal_alignment = 2
+offset_left = -41.0
+offset_top = 5.0
+offset_right = -6.0
+offset_bottom = 40.0
+texture_normal = ExtResource("24_u1l8f")
+texture_pressed = ExtResource("24_u1l8f")
+texture_hover = ExtResource("25_sij56")
+texture_disabled = ExtResource("26_rij7b")
 
 [node name="ObjectSelectionBackground" type="ColorRect" parent="CanvasLayer"]
 anchors_preset = 12
@@ -349,6 +354,7 @@ color = Color(0, 1, 1, 1)
 [connection signal="pressed" from="CanvasLayer/Title/UnpassableMode" to="." method="_on_unpassable_mode_pressed"]
 [connection signal="pressed" from="CanvasLayer/Title/HideObjects" to="." method="_on_hide_objects_pressed"]
 [connection signal="pressed" from="CanvasLayer/Title/Undo" to="." method="_on_undo_pressed"]
+[connection signal="pressed" from="CanvasLayer/Title/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="CanvasLayer/StatusBar/HidePanel" to="." method="_on_hide_panel_pressed"]
 [connection signal="pressed" from="CanvasLayer/StatusBar/PreviousTile" to="." method="_on_previous_tile_pressed"]
 [connection signal="pressed" from="CanvasLayer/StatusBar/NextTile" to="." method="_on_next_tile_pressed"]

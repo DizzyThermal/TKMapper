@@ -12,7 +12,7 @@ func _numeric_sort(a: String, b: String) -> bool:
 
 func _init(tile_regex="tile\\d+\\.dat", tile_pal="tile.pal", tile_tbl="tile.tbl"):
 	var start_time := Time.get_ticks_msec()
-	var ntk_data_directory := DirAccess.open(Resources.data_dir)
+	var ntk_data_directory := DirAccess.open(Database.get_config_item_value("data_dir"))
 
 	# EPFs
 	var tileDatRegex := RegEx.new()

@@ -8,7 +8,6 @@ var palette_color_count := 256
 var config_path := "res://config.json"
 
 var data_dir := ""
-var last_map_path := ""
 var desktop_dir := ""
 
 # TODO: See if this is problematic for future items
@@ -51,7 +50,6 @@ func _init():
 
 	var home_dir := OS.get_environment("HOME") if OS.get_environment("HOME") else OS.get_environment("USERPROFILE")
 	self.data_dir = config_json.data_dir.replace("\\", "/").replace("${HOME}", home_dir)
-	self.last_map_path = config_json.last_map_path.replace("\\", "/").replace("${HOME}", home_dir)
 
 	# Check NTK Data Directory
 	if not FileAccess.file_exists(self.data_dir + "/tile.dat"):

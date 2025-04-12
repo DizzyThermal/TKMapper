@@ -21,6 +21,7 @@ config/icon="res://icon.png"
 
 Debug="*res://Resources/Debug.gd"
 Resources="*res://Resources/Resources.gd"
+Database="*res://Resources/Database.gd"
 
 [display]
 

@@ -67,3 +67,8 @@ your system's NexusTK directories
 
 * Delete Mode (Over Map):
     * ` Left Mouse Button `: Deletes the tile or object under the mouse cursor
+
+## Notes
+
+* A `config.db` SQLite3 database tracks the `last_map_path` to load the last map
+  that was open in the editor

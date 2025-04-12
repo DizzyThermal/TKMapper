@@ -81,7 +81,7 @@ var thread_ids: Array[int] = []
 func _ready():
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
-	var last_map_path_parts: PackedStringArray = Resources.last_map_path.split("/")
+	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").replace("\\", "/").split("/")
 	var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))
 	file_dialog.current_dir = last_map_dir
 	file_dialog.add_filter("*.cmp", "Map Files")
@@ -93,7 +93,7 @@ func _ready():
 	$Camera2D.limit_top = -480
 
 	# Load Map
-	load_map(Resources.last_map_path)
+	load_map(Database.get_config_item_value("last_map_path").replace("\\", "/"))
 
 	# Create Cursor Tile
 	var tile_index: int = map_tiles[0][0]["ab_index"]
@@ -601,15 +601,7 @@ func clear_map() -> void:
 	map_renderer.cmp = null
 
 func update_last_map_path(map_path: String) -> void:
-	Resources.last_map_path = map_path
-	var config_file := FileAccess.open(Resources.config_path, FileAccess.READ)
-	var config_json = JSON.parse_string(config_file.get_as_text())
-	config_file.close()
-	config_json["last_map_path"] = Resources.last_map_path
-	config_file = FileAccess.open(Resources.config_path, FileAccess.WRITE)
-	config_file.store_string(JSON.stringify(config_json, "  ", false))
-	config_file.flush()
-	config_file.close
+	Database.upsert_config_item("last_map_path", map_path)
 
 func _on_file_dialog_file_selected(map_path: String):
 	if file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_OPEN_FILE:

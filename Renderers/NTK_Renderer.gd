@@ -8,7 +8,17 @@ var epfs: Array[EpfFileHandler] = []
 var pal: PalFileHandler = null
 
 var images: Dictionary[String, Image] = {}
-var last_access_times: Dictionary[String, int] = {}
+
+func prune_cache(images_to_remove: int) -> void:
+	var keys_to_remove: Array[String] = []
+	for image_key in images.keys():
+		keys_to_remove.append(image_key)
+		if len(keys_to_remove) >= images_to_remove:
+			break
+	for image_key in keys_to_remove:
+		print(len(images))
+		images.erase(image_key)
+		print(len(images))
 
 func create_pixel_data(
 		frame_index: int,
@@ -54,7 +64,6 @@ func render_frame(
 		render_animated: bool=false) -> Image:
 	var image_key := str(frame_index) + "-" + str(palette_index) + "-" + str(animated_color_offset) + "-" + str(initial_color_offset)
 	if image_key in images:
-		last_access_times[image_key] = Time.get_ticks_msec()
 		return images[image_key]
 
 	var frame := get_frame(frame_index)
@@ -68,7 +77,6 @@ func render_frame(
 	else:
 		images[image_key] = frame_image
 
-	last_access_times[image_key] = Time.get_ticks_msec()
 	return images[image_key]
 
 func render_animated_frame(

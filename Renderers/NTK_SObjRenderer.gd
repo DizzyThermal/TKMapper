@@ -7,6 +7,15 @@ var sobj: SObjTblFileHandler = null
 
 var object_images := {}
 
+func prune_cache(images_to_remove: int) -> void:
+	var keys_to_remove: Array[int] = []
+	for image_key in object_images.keys():
+		keys_to_remove.append(image_key)
+		if len(keys_to_remove) >= images_to_remove:
+			break
+	for image_key in keys_to_remove:
+		object_images.erase(image_key)
+
 func _init():
 	var start_time := Time.get_ticks_msec()
 	tilec_renderer = NTK_TileRenderer.new("tilec\\d+\\.dat", "TileC.pal", "TILEC.TBL")

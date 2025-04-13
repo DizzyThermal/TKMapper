@@ -542,6 +542,12 @@ func load_tileset(start_tile: int=0) -> void:
 	var tile_count: int = int(tile_page_size_spinbox.value)
 	var end_tile = min(start_tile + tile_count + 1, map_renderer.tile_renderer.tbl.tile_count)
 
+	# Prune Cache
+	var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
+	var images_to_prune: int = len(map_renderer.tile_renderer.images) + tile_count - tile_cache_size
+	if images_to_prune > 0:
+		map_renderer.tile_renderer.prune_cache(images_to_prune)
+
 	# Collect Unique Tiles
 	thread_ids.clear()
 	thread_ids.append_array(range(max(1, start_tile), end_tile))
@@ -552,8 +558,9 @@ func load_tileset(start_tile: int=0) -> void:
 	
 	# Load Tile Selection Area
 	clear_container(tile_set_container)
-	for i in range(max(1, start_tile), end_tile):
+	for i in range(start_tile, end_tile):
 		var tile := TextureRect.new()
+		tile.custom_minimum_size = Resources.tile_size_vector
 		var palette_index := map_renderer.tile_renderer.tbl.palette_indices[i]
 		tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(i, palette_index))
 		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
@@ -568,7 +575,18 @@ func render_object(thread_object_index: int) -> void:
 func load_objectset(start_object: int=0) -> void:
 	var object_count: int = int(object_page_size_spinbox.value)
 	var end_object = min(start_object + object_count + 1, map_renderer.sobj_renderer.sobj.object_count)
-	
+
+	# Prune Cache
+	var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
+	var images_to_prune: int = len(map_renderer.sobj_renderer.tilec_renderer.images) + (object_count * 10) - tile_cache_size
+	if images_to_prune > 0:
+		map_renderer.sobj_renderer.tilec_renderer.prune_cache(images_to_prune)
+
+	var object_cache_size: int = int(Database.get_config_item_value("object_cache_size"))
+	var objects_to_prune: int = len(map_renderer.sobj_renderer.object_images) + object_count - object_cache_size
+	if objects_to_prune > 0:
+		map_renderer.sobj_renderer.prune_cache(objects_to_prune)
+
 	# Collect Unique Objects
 	thread_ids.clear()
 	thread_ids.append_array(range(start_object, end_object))

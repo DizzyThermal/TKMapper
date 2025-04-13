@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=34 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -32,6 +32,7 @@
 [ext_resource type="Texture2D" uid="uid://bw4ijvrprwbpt" path="res://Images/undo-bright.svg" id="25_hk2co"]
 [ext_resource type="Texture2D" uid="uid://c6qjnn8ubwgen" path="res://Images/settings-bright.svg" id="25_sij56"]
 [ext_resource type="Texture2D" uid="uid://c2bppf7m6bi2u" path="res://Images/settings-dark.svg" id="26_rij7b"]
+[ext_resource type="PackedScene" uid="uid://b3l8set3g0li7" path="res://Dialogs/SettingsMenu.tscn" id="33_sij56"]
 
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
@@ -307,6 +308,9 @@ texture_normal = ExtResource("8_28ygm")
 texture_pressed = ExtResource("8_28ygm")
 texture_hover = ExtResource("22_c3cgk")
 texture_disabled = ExtResource("14_jligr")
+
+[node name="SettingsMenu" parent="CanvasLayer" instance=ExtResource("33_sij56")]
+visible = false
 
 [node name="TargetBox" type="Control" parent="."]
 z_index = 3

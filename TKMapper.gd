@@ -1,9 +1,5 @@
 extends Node2D
 
-# Config Parameters
-var tile_page_size := 170
-var object_page_size := 36
-
 # State Variables
 var map_renderer: NTK_MapRenderer = null
 
@@ -15,22 +11,14 @@ var cursor_rect := Rect2(Vector2i.ZERO, Resources.tile_size_vector)
 var cursor_inner_rect := Rect2(Vector2i(0.1, 0.1), Vector2i(0.8, 0.8))
 var map_regex: RegEx = RegEx.new()
 
+var max_tile_count := 0
+var max_object_count := 0
 var current_tile_index := 0
 var current_object_index := 0
 var hover_tile_index := 0
 var hover_object_index := 0
-var max_tile_pages := 0		# Evaluated to: tile_page_size / tile_count (in TileRender tbl)
-var max_object_pages := 0	# Evaluated to: object_page_size / object_count (in SObjRenderer sobj)
 var current_tile_page := 0
 var current_object_page := 0
-var menu_open := false
-var over_window := false
-var over_title_bar := false
-var over_status_bar := false
-var over_selection_area := false
-var over_button := false
-var objects_hidden := false
-var is_erase_mode := false
 
 enum MapMode {
 	TILE = 0,
@@ -77,10 +65,17 @@ var thread_ids: Array[int] = []
 @onready var hide_panel_button := $CanvasLayer/StatusBar/HidePanel
 @onready var next_button := $CanvasLayer/StatusBar/NextTile
 @onready var prev_button := $CanvasLayer/StatusBar/PreviousTile
+@onready var settings_menu := $CanvasLayer/SettingsMenu
+@onready var data_dir_line_edit := $CanvasLayer/SettingsMenu/VBoxContainer/DataDirectoryContainer/LineEdit
+@onready var tile_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/TilePageSizeContainer/SpinBox
+@onready var object_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/ObjectPageSizeContainer/SpinBox
 
 var initialized: bool = false
 
 func initialize() -> void:
+	# Settings Panel
+	settings_menu.set_parent(self)
+
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
 	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
@@ -107,68 +102,72 @@ func initialize() -> void:
 	set_target_box_color(Color.GREEN)
 
 	# TileSet
-	var max_tile_count = map_renderer.tile_renderer.tbl.tile_count
-	var max_object_count = map_renderer.sobj_renderer.sobj.object_count
-	max_tile_pages = ceil(max_tile_count / tile_page_size)
-	max_object_pages = ceil(max_object_count / object_page_size) 
+	max_tile_count = map_renderer.tile_renderer.tbl.tile_count
+	max_object_count = map_renderer.sobj_renderer.sobj.object_count
+	var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
 	page_info_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 	change_to_tile_mode()
 
 	# Connect Signals
 	## Viewport
-	get_viewport().connect("mouse_entered", func(): self.over_window = true)
-	get_viewport().connect("mouse_exited", func(): self.over_window = false)
+	get_viewport().connect("mouse_entered", func(): MapperState.over_window = true)
+	get_viewport().connect("mouse_exited", func(): MapperState.over_window = false)
 
 	## Title Bar
-	title_bar.connect("mouse_entered", func(): self.over_title_bar = true)
-	title_bar.connect("mouse_exited", func(): self.over_title_bar = false)
+	title_bar.connect("mouse_entered", func(): MapperState.over_title_bar = true)
+	title_bar.connect("mouse_exited", func(): MapperState.over_title_bar = false)
 
-	load_map_button.connect("mouse_entered", func(): self.over_button = true)
-	load_map_button.connect("mouse_exited", func(): self.over_button = false)
+	load_map_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	load_map_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	save_map_button.connect("mouse_entered", func(): self.over_button = true)
-	save_map_button.connect("mouse_exited", func(): self.over_button = false)
+	save_map_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	save_map_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	tile_mode_button.connect("mouse_entered", func(): self.over_button = true)
-	tile_mode_button.connect("mouse_exited", func(): self.over_button = false)
+	tile_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	tile_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	object_mode_button.connect("mouse_entered", func(): self.over_button = true)
-	object_mode_button.connect("mouse_exited", func(): self.over_button = false)
+	object_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	object_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	unpassable_mode_button.connect("mouse_entered", func(): self.over_button = true)
-	unpassable_mode_button.connect("mouse_exited", func(): self.over_button = false)
+	unpassable_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	unpassable_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	hide_objects_button.connect("mouse_entered", func(): self.over_button = true)
-	hide_objects_button.connect("mouse_exited", func(): self.over_button = false)
+	hide_objects_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	hide_objects_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	undo_button.connect("mouse_entered", func(): self.over_button = true)
-	undo_button.connect("mouse_exited", func(): self.over_button = false)
+	undo_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	undo_button.connect("mouse_exited", func(): MapperState.over_button = false)
 	
-	settings_button.connect("mouse_entered", func(): self.over_button = true)
-	settings_button.connect("mouse_exited", func(): self.over_button = false)
+	settings_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	settings_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
 	## Selection Area
-	tile_selection_area.connect("mouse_entered", func(): self.over_selection_area = true)
-	tile_selection_area.connect("mouse_exited", func(): self.over_selection_area = false)
+	tile_selection_area.connect("mouse_entered", func(): MapperState.over_selection_area = true)
+	tile_selection_area.connect("mouse_exited", func(): MapperState.over_selection_area = false)
 
-	object_selection_area.connect("mouse_entered", func(): self.over_selection_area = true)
-	object_selection_area.connect("mouse_exited", func(): self.over_selection_area = false)
+	object_selection_area.connect("mouse_entered", func(): MapperState.over_selection_area = true)
+	object_selection_area.connect("mouse_exited", func(): MapperState.over_selection_area = false)
 
 	## Status Bar
-	status_bar.connect("mouse_entered", func(): self.over_status_bar = true)
-	status_bar.connect("mouse_exited", func(): self.over_status_bar = false)
+	status_bar.connect("mouse_entered", func(): MapperState.over_status_bar = true)
+	status_bar.connect("mouse_exited", func(): MapperState.over_status_bar = false)
 
-	page_info_label.connect("mouse_entered", func(): self.over_status_bar = true)
-	page_info_label.connect("mouse_exited", func(): self.over_status_bar = false)
+	page_info_label.connect("mouse_entered", func(): MapperState.over_status_bar = true)
+	page_info_label.connect("mouse_exited", func(): MapperState.over_status_bar = false)
 
-	hide_panel_button.connect("mouse_entered", func(): self.over_button = true)
-	hide_panel_button.connect("mouse_exited", func(): self.over_button = false)
+	hide_panel_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	hide_panel_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	prev_button.connect("mouse_entered", func(): self.over_button = true)
-	prev_button.connect("mouse_exited", func(): self.over_button = false)
+	prev_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	prev_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
-	next_button.connect("mouse_entered", func(): self.over_button = true)
-	next_button.connect("mouse_exited", func(): self.over_button = false)
+	next_button.connect("mouse_entered", func(): MapperState.over_button = true)
+	next_button.connect("mouse_exited", func(): MapperState.over_button = false)
+
+	# Settings Panel
+	data_dir_line_edit.text = Database.get_config_item_value("data_dir")
+	tile_page_size_spinbox.value = int(Database.get_config_item_value("tile_page_size"))
+	object_page_size_spinbox.value = int(Database.get_config_item_value("object_page_size"))
 
 	initialized = true
 
@@ -188,56 +187,56 @@ func _process(delta):
 
 	# Load / Save Map
 	if Input.is_action_just_pressed("load-map") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_load_map()					# L
 	elif Input.is_action_just_pressed("save-map") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_save_map()					# S
 
 	# Mode Switches
 	if Input.is_action_just_pressed("toggle-mode") and \
-			not menu_open:
+			not MapperState.menu_open:
 		change_map_mode()			# M
 	elif Input.is_action_just_pressed("mode-tile") and \
-			not menu_open:
+			not MapperState.menu_open:
 		change_to_tile_mode()		# T
 	elif Input.is_action_just_pressed("mode-object") and \
-			not menu_open:
+			not MapperState.menu_open:
 		change_to_object_mode()		# O
 	elif Input.is_action_just_pressed("mode-unpassable") and \
-			not menu_open:
+			not MapperState.menu_open:
 		change_to_unpassable_mode()	# P
 
 	# Toggle Objects
 	if Input.is_action_just_pressed("toggle-objects") \
-			and not menu_open:
+			and not MapperState.menu_open:
 		_toggle_hide_objects()
 
 	# Undo Tile
 	if Input.is_action_just_pressed("undo") and \
-			not menu_open:
+			not MapperState.menu_open:
 		undo()
 
 	# Toggle Insert / Erase Modes
 	if Input.is_action_just_pressed("insert-mode") and \
-			not menu_open:
-		is_erase_mode = false		# I
+			not MapperState.menu_open:
+		MapperState.is_erase_mode = false		# I
 	elif Input.is_action_just_pressed("erase-mode") and \
-			not menu_open:
-		is_erase_mode = true		# D | E | X
+			not MapperState.menu_open:
+		MapperState.is_erase_mode = true		# D | E | X
 
 	# Page Switching
 	if Input.is_action_just_pressed("next-page") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_next_page()
 	elif Input.is_action_just_pressed("previous-page") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_prev_page()
 	elif Input.is_action_just_pressed("show-selection-area") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_toggle_selection_area(true, true)
 	elif Input.is_action_just_pressed("hide-selection-area") and \
-			not menu_open:
+			not MapperState.menu_open:
 		_toggle_selection_area(true, false)
 
 	# Cursor
@@ -247,7 +246,7 @@ func _process(delta):
 		grabbing_map = true
 		cursor_tile.visible = false
 		target_box.visible = false
-	elif is_erase_mode:
+	elif MapperState.is_erase_mode:
 		set_target_box_color(Color.RED)
 		cursor_tile.visible = false
 		target_box.visible = true
@@ -272,9 +271,9 @@ func _process(delta):
 	# Change Tile on Left Mouse Button (LMB) - Insert Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
-			not is_erase_mode and \
+			not MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		if mouse_coordinate.x >= 0 and mouse_coordinate.y >= 0:
 			if mode == MapMode.TILE:
 				if current_tile_index not in map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
@@ -332,9 +331,9 @@ func _process(delta):
 	# Erase Tile on Left Mouse Button (LMB) - Eraser Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
-			is_erase_mode and \
+			MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
-			not menu_open and \
+			not MapperState.menu_open and \
 			mouse_coordinate.x >= 0 and \
 			mouse_coordinate.y >= 0:
 			if mode == MapMode.TILE:
@@ -378,7 +377,7 @@ func _process(delta):
 	if Input.is_action_just_pressed("copy-tile") and \
 			cursor_state == "Idle" and \
 			mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		var cursor_tile_coord := get_global_mouse_position()
 		cursor_tile_coord.x = floor(cursor_tile_coord.x / Resources.tile_size)
 		cursor_tile_coord.y = floor(cursor_tile_coord.y / Resources.tile_size)
@@ -390,14 +389,14 @@ func _process(delta):
 			# Seek to Page
 			if mode == MapMode.TILE:
 				var previous_tile_page = current_tile_page
-				current_tile_page = current_tile_index / tile_page_size
+				current_tile_page = current_tile_index / int(tile_page_size_spinbox.value)
 				if previous_tile_page != current_tile_page:
-					load_tileset(current_tile_page * tile_page_size)
+					load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
 			elif mode == MapMode.OBJECT:
 				var previous_object_page = current_object_page
-				current_object_page = current_object_index / object_page_size
+				current_object_page = current_object_index / int(object_page_size_spinbox.value)
 				if previous_object_page != current_object_page:
-					load_objectset(current_object_page * object_page_size)
+					load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 	# Tile Preview
 	if mouse_coordinate.x >= 0 and \
@@ -405,14 +404,14 @@ func _process(delta):
 			mouse_position.y >= 4 and \
 			not grabbing_map and \
 			mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		var adjusted_height := Vector2i(0, 0)
 		if mode == MapMode.OBJECT:
 			var object_height: int = map_renderer.sobj_renderer.sobj.objects[current_object_index].height
 			adjusted_height.y = Resources.tile_size * (object_height - 1)
 		cursor_tile.position = snapped_mouse_position - adjusted_height
 		target_box.position = snapped_mouse_position
-		if not is_erase_mode:
+		if not MapperState.is_erase_mode:
 			cursor_tile.visible = true
 		if mode != MapMode.UNPASSABLE:
 			target_box.visible = true
@@ -423,7 +422,7 @@ func _process(delta):
 	if Input.is_action_just_pressed("zoom-in") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		if $Camera2D.zoom.x <= camera_max_zoom:
 			$Camera2D.zoom.x *= 1.5
 		if $Camera2D.zoom.y <= camera_max_zoom:
@@ -431,18 +430,18 @@ func _process(delta):
 	if Input.is_action_just_pressed("zoom-out") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		if $Camera2D.zoom.x >= camera_min_zoom:
 			$Camera2D.zoom.x /= 1.5
 		if $Camera2D.zoom.y >= camera_min_zoom:
 			$Camera2D.zoom.y /= 1.5
 
 	if mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		var info_tile_index = tile_map.get_cell_source_id(0, mouse_coordinate)
 		status_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
 	elif not mouse_over_tile_map() and \
-			not menu_open:
+			not MapperState.menu_open:
 		if mode == MapMode.TILE:
 			status_label.text = "Tile Index: " + str(self.hover_tile_index)
 		elif mode == MapMode.OBJECT:
@@ -451,18 +450,18 @@ func _process(delta):
 func _input(event):
 	if event is InputEventMouseButton:
 		if not mouse_over_tile_map() and \
-				not menu_open:
+				not MapperState.menu_open:
 			if mode == MapMode.TILE:
 				update_cursor_preview(self.hover_tile_index)
 			elif mode == MapMode.OBJECT:
 				update_cursor_preview(self.hover_object_index)
 
 func mouse_over_tile_map() -> bool:
-	return	over_window and \
-			not over_button and \
-			not over_title_bar and \
-			not over_selection_area and \
-			not over_status_bar
+	return	MapperState.over_window and \
+			not MapperState.over_button and \
+			not MapperState.over_title_bar and \
+			not MapperState.over_selection_area and \
+			not MapperState.over_status_bar
 
 func set_target_box_color(color: Color) -> void:
 	$TargetBox/Top.color = color
@@ -535,7 +534,8 @@ func render_tile(thread_tile_index: int) -> void:
 	var palette_index := map_renderer.tile_renderer.tbl.palette_indices[tile_index]
 	map_renderer.tile_renderer.render_frame(tile_index, palette_index)
 
-func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
+func load_tileset(start_tile: int=0) -> void:
+	var tile_count: int = int(tile_page_size_spinbox.value)
 	var end_tile = min(start_tile + tile_count + 1, map_renderer.tile_renderer.tbl.tile_count)
 
 	# Collect Unique Tiles
@@ -554,13 +554,15 @@ func load_tileset(start_tile: int=0, tile_count: int=tile_page_size) -> void:
 		tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(i, palette_index))
 		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
 		tile_set_container.add_child(tile)
+	var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
 	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 
 func render_object(thread_object_index: int) -> void:
 	var object_index: int = thread_ids[thread_object_index]
 	map_renderer.sobj_renderer.render_object(object_index)
 
-func load_objectset(start_object: int=0, object_count: int=object_page_size) -> void:
+func load_objectset(start_object: int=0) -> void:
+	var object_count: int = int(object_page_size_spinbox.value)
 	var end_object = min(start_object + object_count + 1, map_renderer.sobj_renderer.sobj.object_count)
 	
 	# Collect Unique Objects
@@ -583,12 +585,13 @@ func load_objectset(start_object: int=0, object_count: int=object_page_size) -> 
 		object_texture.size_flags_vertical = Control.SIZE_SHRINK_END
 		object_texture.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		object_set_container.add_child(object_texture)
+	var max_object_pages = ceil(max_object_count / object_page_size_spinbox.value)
 	page_info_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
 
 func _load_map():
 	# Select Map to Load
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
-	menu_open = true
+	MapperState.menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_load_map_pressed():
@@ -597,7 +600,7 @@ func _on_load_map_pressed():
 func _save_map():
 	# Select Map to Save
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
-	menu_open = true
+	MapperState.menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_save_map_pressed():
@@ -659,7 +662,7 @@ func set_menu_closed() -> void:
 	menu_closed_timer.one_shot = true
 	menu_closed_timer.autostart = true
 
-	menu_closed_timer.connect("timeout", func(): self.menu_open = false)
+	menu_closed_timer.connect("timeout", func(): MapperState.menu_open = false)
 	
 	add_child(menu_closed_timer)
 
@@ -679,9 +682,9 @@ func _on_mode_pressed():
 	change_map_mode()
 
 func _toggle_hide_objects():
-	objects_hidden = not objects_hidden
-	objects.visible = not objects_hidden
-	if objects_hidden:
+	MapperState.objects_hidden = not MapperState.objects_hidden
+	objects.visible = not MapperState.objects_hidden
+	if MapperState.objects_hidden:
 		hide_objects_button.texture_normal = load("res://Images/eye-crossed.svg")
 		hide_objects_button.texture_pressed = load("res://Images/eye-crossed.svg")
 		hide_objects_button.texture_hover = load("res://Images/eye-crossed-dark.svg")
@@ -698,14 +701,16 @@ func _on_hide_objects_pressed():
 func _next_page() -> void:
 	if mode == MapMode.TILE:
 		var previous_tile_page = current_tile_page
+		var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
 		current_tile_page = min(max_tile_pages, current_tile_page + 1)
 		if previous_tile_page != current_tile_page:
-			load_tileset(current_tile_page * tile_page_size)
+			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
+		var max_object_pages = ceil(max_object_count / object_page_size_spinbox.value)
 		current_object_page = min(max_object_pages, current_object_page + 1)
 		if previous_object_page != current_object_page:
-			load_objectset(current_object_page * object_page_size)
+			load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 func _on_next_tile_pressed():
 	_next_page()
@@ -715,12 +720,12 @@ func _prev_page() -> void:
 		var previous_tile_page = current_tile_page
 		current_tile_page = max(0, current_tile_page - 1)
 		if previous_tile_page != current_tile_page:
-			load_tileset(current_tile_page * tile_page_size)
+			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
 		current_object_page = max(0, current_object_page - 1)
 		if previous_object_page != current_object_page:
-			load_objectset(current_object_page * object_page_size)
+			load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 func _on_previous_tile_pressed():
 	_prev_page()
@@ -774,7 +779,8 @@ func open_settings() -> void:
 	print("Opening settings")
 
 func _on_settings_pressed():
-	open_settings()
+	MapperState.menu_open = not settings_menu.visible
+	settings_menu.visible = MapperState.menu_open
 
 func change_to_tile_mode() -> void:
 	_toggle_selection_area(true, false)

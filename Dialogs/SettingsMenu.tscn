@@ -1,0 +1,115 @@
+[gd_scene load_steps=6 format=3 uid="uid://b3l8set3g0li7"]
+
+[ext_resource type="Script" uid="uid://wiuvji2dtus4" path="res://Dialogs/SettingsMenu.gd" id="1_c4c1i"]
+[ext_resource type="Texture2D" uid="uid://bm3feqv4swt10" path="res://Images/close.svg" id="2_ulqxs"]
+[ext_resource type="Texture2D" uid="uid://btq3k28hwwqdf" path="res://Images/close-bright.svg" id="3_4mf3m"]
+[ext_resource type="Texture2D" uid="uid://681axsk0b4ld" path="res://Images/close-dark.svg" id="4_aatlc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6nlvh"]
+bg_color = Color(0.237539, 0.237539, 0.237539, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="SettingsMenu" type="Panel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -350.0
+offset_right = 500.0
+offset_bottom = 350.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6nlvh")
+script = ExtResource("1_c4c1i")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(1000, 60)
+layout_mode = 0
+offset_right = 996.0
+offset_bottom = 46.0
+theme_override_font_sizes/font_size = 28
+text = "Settings"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" type="TextureButton" parent="Label"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -37.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 37.0
+texture_normal = ExtResource("2_ulqxs")
+texture_pressed = ExtResource("2_ulqxs")
+texture_hover = ExtResource("3_4mf3m")
+texture_disabled = ExtResource("4_aatlc")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 1000.0
+offset_bottom = 700.0
+theme_override_constants/separation = 16
+
+[node name="DataDirectoryContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/DataDirectoryContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Data Directory"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/DataDirectoryContainer"]
+custom_minimum_size = Vector2(700, 0)
+layout_mode = 2
+text = "C:\\Program Files (x86)\\KRU\\NexusTK\\Data"
+
+[node name="TilePageSizeContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/TilePageSizeContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Tile Page Size"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SpinBox" type="SpinBox" parent="VBoxContainer/TilePageSizeContainer"]
+layout_mode = 2
+max_value = 500.0
+value = 170.0
+
+[node name="ObjectPageSizeContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ObjectPageSizeContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Object Page Size"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SpinBox" type="SpinBox" parent="VBoxContainer/ObjectPageSizeContainer"]
+layout_mode = 2
+value = 36.0
+
+[connection signal="pressed" from="Label/CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="text_submitted" from="VBoxContainer/DataDirectoryContainer/LineEdit" to="." method="_on_data_directory_line_edit_text_submitted"]
+[connection signal="value_changed" from="VBoxContainer/TilePageSizeContainer/SpinBox" to="." method="_on_tile_page_size_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/ObjectPageSizeContainer/SpinBox" to="." method="_on_object_page_size_value_changed"]

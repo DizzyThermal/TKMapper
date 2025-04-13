@@ -3,22 +3,23 @@ extends Node
 const default_data_dirs: Array[String] = [
 	"C:\\Program Files\\KRU\\NexusTK\\Data",					# Windows 32-Bit Default
 	"C:\\Program Files (x86)\\KRU\\NexusTK\\Data",				# Windows 64-Bit Default
-	"${HOME}/.wine/drive_c/Program Files/KRU/NexusTK/Data",		# Linux (Wine win32)
+	"${HOME}/.wine/drive_c/Program Files/KRU/NexusTK/Data",		# Linux (Wine 32-Bit)
 ]
 const default_last_map_path: String = "./Maps/TK010000.cmp"
+
+const default_tile_page_size: String = "170"
+const default_object_page_size: String = "36"
 
 var database_initialized: bool = false
 
 var db: SQLite
 const db_path := "res://config.db"
-var db_is_new := true
 
 func _ready() -> void:
 	db = SQLite.new()
-	var db_is_new := not FileAccess.file_exists(db_path)
 	db.path = db_path
 	db.open_db()
-	
+
 	# Check Database Tables (Initialize if any tables are missing)
 	if not table_exists("config"):
 		db.create_table("config", {
@@ -30,6 +31,7 @@ func _ready() -> void:
 			"config_key":	{"data_type":"text"},
 			"config_value": {"data_type":"text"},
 		})
+
 	# Check Config Entries (Initialize if any config entries are missing)
 	if not config_key_exists("data_dir"):
 		var home_dir := OS.get_environment("HOME") if OS.get_environment("HOME") else OS.get_environment("USERPROFILE")
@@ -38,9 +40,12 @@ func _ready() -> void:
 			if FileAccess.file_exists(data_dir + "/tile.dat"):
 				upsert_config_item("data_dir", data_dir)
 				break
-
 	if not config_key_exists("last_map_path"):
 		upsert_config_item("last_map_path", default_last_map_path)
+	if not config_key_exists("tile_page_size"):
+		upsert_config_item("tile_page_size", default_tile_page_size)
+	if not config_key_exists("object_page_size"):
+		upsert_config_item("object_page_size", default_object_page_size)
 	
 	database_initialized = true
 

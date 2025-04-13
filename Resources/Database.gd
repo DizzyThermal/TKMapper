@@ -10,6 +10,9 @@ const default_last_map_path: String = "./Maps/TK010000.cmp"
 const default_tile_page_size: String = "170"
 const default_object_page_size: String = "36"
 
+const default_tile_cache_size: int = 1000
+const default_object_cache_size: int = 100
+
 var database_initialized: bool = false
 
 var db: SQLite
@@ -46,6 +49,10 @@ func _ready() -> void:
 		upsert_config_item("tile_page_size", default_tile_page_size)
 	if not config_key_exists("object_page_size"):
 		upsert_config_item("object_page_size", default_object_page_size)
+	if not config_key_exists("tile_cache_size"):
+		upsert_config_item("tile_cache_size", str(default_tile_cache_size))
+	if not config_key_exists("object_cache_size"):
+		upsert_config_item("object_cache_size", str(default_object_cache_size))
 	
 	database_initialized = true
 

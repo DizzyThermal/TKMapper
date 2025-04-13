@@ -69,6 +69,8 @@ var thread_ids: Array[int] = []
 @onready var data_dir_line_edit := $CanvasLayer/SettingsMenu/VBoxContainer/DataDirectoryContainer/LineEdit
 @onready var tile_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/TilePageSizeContainer/SpinBox
 @onready var object_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/ObjectPageSizeContainer/SpinBox
+@onready var tile_cache_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/TileCacheSizeContainer/SpinBox
+@onready var object_cache_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/ObjectCacheSizeContainer/SpinBox
 
 var initialized: bool = false
 
@@ -168,6 +170,8 @@ func initialize() -> void:
 	data_dir_line_edit.text = Database.get_config_item_value("data_dir")
 	tile_page_size_spinbox.value = int(Database.get_config_item_value("tile_page_size"))
 	object_page_size_spinbox.value = int(Database.get_config_item_value("object_page_size"))
+	tile_cache_size_spinbox.value = int(Database.get_config_item_value("tile_cache_size"))
+	object_cache_size_spinbox.value = int(Database.get_config_item_value("object_cache_size"))
 
 	initialized = true
 
@@ -778,6 +782,7 @@ func _on_undo_pressed():
 func _on_settings_pressed():
 	MapperState.menu_open = not settings_menu.visible
 	settings_menu.visible = MapperState.menu_open
+	settings_menu.status_label.text = ""
 
 func change_to_tile_mode() -> void:
 	_toggle_selection_area(true, false)

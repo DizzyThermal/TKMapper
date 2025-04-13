@@ -7,7 +7,8 @@ const Palette = preload("res://DataTypes/Palette.gd")
 var epfs: Array[EpfFileHandler] = []
 var pal: PalFileHandler = null
 
-var images := {}
+var images: Dictionary[String, Image] = {}
+var last_access_times: Dictionary[String, int] = {}
 
 func create_pixel_data(
 		frame_index: int,
@@ -53,6 +54,7 @@ func render_frame(
 		render_animated: bool=false) -> Image:
 	var image_key := str(frame_index) + "-" + str(palette_index) + "-" + str(animated_color_offset) + "-" + str(initial_color_offset)
 	if image_key in images:
+		last_access_times[image_key] = Time.get_ticks_msec()
 		return images[image_key]
 
 	var frame := get_frame(frame_index)
@@ -66,6 +68,7 @@ func render_frame(
 	else:
 		images[image_key] = frame_image
 
+	last_access_times[image_key] = Time.get_ticks_msec()
 	return images[image_key]
 
 func render_animated_frame(
@@ -88,16 +91,16 @@ func create_animation_spritesheet(
 		palette_index=-1) -> Image:
 	var start_time := Time.get_ticks_msec()
 	var frames: Array[NTK_Frame] = []
-	var images := []
+	var animation_images := []
 	for frame_index in frame_indices:
 		frames.append(get_frame(frame_index))
-		images.append(render_frame(frame_index, palette_index))
+		animation_images.append(render_frame(frame_index, palette_index))
 
 	var pivot := Pivot.get_pivot(frames)
 
-	var sprite_sheet := Image.create(pivot.width * len(images), pivot.height, false, Image.FORMAT_RGBA8)
-	for offset in range(len(images)):
-		var image: Image = images[offset]
+	var sprite_sheet := Image.create(pivot.width * len(animation_images), pivot.height, false, Image.FORMAT_RGBA8)
+	for offset in range(len(animation_images)):
+		var image: Image = animation_images[offset]
 		var frame: NTK_Frame = frames[offset]
 		var frame_pivot = Pivot.get_pivot([frame])
 		var image_rect := Rect2i(0, 0, frame.width, frame.height)

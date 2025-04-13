@@ -8,7 +8,7 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 
 * Install NexusTK
 
-* **Import** the `project.godot` file to load the project into Godot 4
+* **Import** the `project.godot` file to load the project into Godot
 
 * **Run** TKMapper, or in the Godot Editor run the main scene: `TKMapper.tscn` (F5)
 

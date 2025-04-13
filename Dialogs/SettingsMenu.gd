@@ -11,7 +11,7 @@ func set_parent(new_parent: Node2D) -> void:
 
 func _on_close_button_pressed():
 	visible = false
-	MapperState.menu_open = true
+	MapperState.menu_open = false
 
 func _on_data_directory_line_edit_text_submitted(new_data_dir_path):
 	if FileAccess.file_exists(new_data_dir_path + "/tile.dat"):

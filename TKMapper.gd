@@ -104,7 +104,7 @@ func initialize() -> void:
 	# TileSet
 	max_tile_count = map_renderer.tile_renderer.tbl.tile_count
 	max_object_count = map_renderer.sobj_renderer.sobj.object_count
-	var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
+	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 	page_info_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 	change_to_tile_mode()
 
@@ -554,7 +554,7 @@ func load_tileset(start_tile: int=0) -> void:
 		tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(i, palette_index))
 		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
 		tile_set_container.add_child(tile)
-	var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
+	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 
 func render_object(thread_object_index: int) -> void:
@@ -585,7 +585,7 @@ func load_objectset(start_object: int=0) -> void:
 		object_texture.size_flags_vertical = Control.SIZE_SHRINK_END
 		object_texture.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		object_set_container.add_child(object_texture)
-	var max_object_pages = ceil(max_object_count / object_page_size_spinbox.value)
+	var max_object_pages: int = ceil(max_object_count / int(object_page_size_spinbox.value))
 	page_info_label.text = "Object Page " + str(current_object_page + 1) + "/" + str(max_object_pages + 1)
 
 func _load_map():
@@ -701,13 +701,13 @@ func _on_hide_objects_pressed():
 func _next_page() -> void:
 	if mode == MapMode.TILE:
 		var previous_tile_page = current_tile_page
-		var max_tile_pages = ceil(max_tile_count / tile_page_size_spinbox.value)
+		var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 		current_tile_page = min(max_tile_pages, current_tile_page + 1)
 		if previous_tile_page != current_tile_page:
 			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
-		var max_object_pages = ceil(max_object_count / object_page_size_spinbox.value)
+		var max_object_pages: int = ceil(max_object_count / int(object_page_size_spinbox.value))
 		current_object_page = min(max_object_pages, current_object_page + 1)
 		if previous_object_page != current_object_page:
 			load_objectset(current_object_page * int(object_page_size_spinbox.value))
@@ -774,9 +774,6 @@ func undo() -> void:
 
 func _on_undo_pressed():
 	undo()
-
-func open_settings() -> void:
-	print("Opening settings")
 
 func _on_settings_pressed():
 	MapperState.menu_open = not settings_menu.visible

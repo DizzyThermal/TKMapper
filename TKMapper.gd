@@ -71,12 +71,15 @@ var thread_ids: Array[int] = []
 @onready var object_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/ObjectPageSizeContainer/SpinBox
 @onready var tile_cache_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/TileCacheSizeContainer/SpinBox
 @onready var object_cache_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/ObjectCacheSizeContainer/SpinBox
+@onready var goto_page := $CanvasLayer/GoToPageMenu
+@onready var goto_page_spinbox := $CanvasLayer/GoToPageMenu/VBoxContainer/PageNumberContainer/SpinBox
 
 var initialized: bool = false
 
 func initialize() -> void:
 	# Settings Panel
 	settings_menu.set_parent(self)
+	goto_page.set_parent(self)
 
 	cursor_renderer = NTK_CursorRenderer.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
@@ -163,6 +166,9 @@ func initialize() -> void:
 	prev_button.connect("mouse_entered", func(): MapperState.over_button = true)
 	prev_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
+	goto_page.connect("mouse_entered", func(): MapperState.over_button = true)
+	goto_page.connect("mouse_exited", func(): MapperState.over_button = false)
+
 	next_button.connect("mouse_entered", func(): MapperState.over_button = true)
 	next_button.connect("mouse_exited", func(): MapperState.over_button = false)
 
@@ -233,6 +239,9 @@ func _process(delta):
 	if Input.is_action_just_pressed("next-page") and \
 			not MapperState.menu_open:
 		_next_page()
+	elif Input.is_action_just_pressed("goto-page") and \
+			not MapperState.menu_open:
+		_on_go_to_page_pressed()
 	elif Input.is_action_just_pressed("previous-page") and \
 			not MapperState.menu_open:
 		_prev_page()
@@ -885,6 +894,28 @@ func _toggle_selection_area(
 		hide_panel_button.texture_pressed = load("res://Images/eye.svg")
 		hide_panel_button.texture_hover = load("res://Images/eye-dark.svg")
 		hide_panel_button.texture_disabled = load("res://Images/eye-crossed-dark.svg")
+
+func  _goto_page(page_number: int):
+	if mode == MapMode.TILE:
+		var previous_tile_page = current_tile_page
+		var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
+		current_tile_page = min(max_tile_pages, page_number)
+		current_tile_page = max(0, current_tile_page)
+		goto_page_spinbox.value = current_tile_page + 1
+		if previous_tile_page != current_tile_page:
+			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
+	elif mode == MapMode.OBJECT:
+		var previous_object_page = current_object_page
+		var max_object_pages: int = ceil(max_object_count / int(object_page_size_spinbox.value))
+		current_object_page = min(max_object_pages, page_number)
+		current_object_page = max(0, current_object_page)
+		goto_page_spinbox.value = current_object_page + 1
+		if previous_object_page != current_object_page:
+			load_objectset(current_object_page * int(object_page_size_spinbox.value))
+
+func _on_go_to_page_pressed():
+	MapperState.menu_open = not goto_page.visible
+	goto_page.visible = MapperState.menu_open
 
 func _on_hide_panel_pressed():
 	_toggle_selection_area()

@@ -35,6 +35,7 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 * `` u|` ``: Undo: Undoes The Previous Change
 * ` i|1 `: Insert Mode: Enters Insert Mode for Tiles/Objects
 * ` d|e|x|2 `: Delete Mode: Enters Delete Mode for Tiles/Objects
+* ` g `: Goto Page: Loads Tile/Object Page from Prompt
 * ` LEFT `: Loads Previous Tile/Object Selection Page
 * ` RIGHT `: Loads Next Tile/Object Selection Page
 * ` UP `: Shows Tile/Object Selection Page

@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=38 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -32,7 +32,11 @@
 [ext_resource type="Texture2D" uid="uid://bw4ijvrprwbpt" path="res://Images/undo-bright.svg" id="25_hk2co"]
 [ext_resource type="Texture2D" uid="uid://c6qjnn8ubwgen" path="res://Images/settings-bright.svg" id="25_sij56"]
 [ext_resource type="Texture2D" uid="uid://c2bppf7m6bi2u" path="res://Images/settings-dark.svg" id="26_rij7b"]
+[ext_resource type="Texture2D" uid="uid://vai57plya4by" path="res://Images/origin.svg" id="30_d6ws0"]
+[ext_resource type="Texture2D" uid="uid://ctu3ygp3xjun1" path="res://Images/origin-bright.svg" id="31_svl66"]
+[ext_resource type="Texture2D" uid="uid://bcep1td534bpb" path="res://Images/origin-dark.svg" id="32_gmerm"]
 [ext_resource type="PackedScene" uid="uid://b3l8set3g0li7" path="res://Dialogs/SettingsMenu.tscn" id="33_sij56"]
+[ext_resource type="PackedScene" uid="uid://cjjuebkfsyuhh" path="res://Dialogs/GoToPageMenu.tscn" id="37_svl66"]
 
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
@@ -254,29 +258,11 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -546.0
+offset_left = -361.0
 offset_top = -31.0
-offset_right = -106.0
+offset_right = -150.0
 offset_bottom = -8.0
 horizontal_alignment = 2
-
-[node name="HidePanel" type="TextureButton" parent="CanvasLayer/StatusBar"]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -100.0
-offset_top = -36.0
-offset_right = -68.0
-offset_bottom = -4.0
-grow_horizontal = 0
-grow_vertical = 0
-texture_normal = ExtResource("11_s3tua")
-texture_pressed = ExtResource("11_s3tua")
-texture_hover = ExtResource("16_ggb22")
-texture_disabled = ExtResource("12_daljj")
 
 [node name="PreviousTile" type="TextureButton" parent="CanvasLayer/StatusBar"]
 layout_mode = 1
@@ -285,15 +271,34 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -70.0
-offset_top = -35.0
-offset_right = -35.0
+offset_left = -145.0
+offset_top = -37.0
+offset_right = -110.0
+offset_bottom = -2.0
 grow_horizontal = 0
 grow_vertical = 0
 texture_normal = ExtResource("7_a5a15")
 texture_pressed = ExtResource("7_a5a15")
 texture_hover = ExtResource("19_1cfy8")
 texture_disabled = ExtResource("12_vdrt2")
+
+[node name="GoToPage" type="TextureButton" parent="CanvasLayer/StatusBar"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -109.0
+offset_top = -37.0
+offset_right = -74.0
+offset_bottom = -2.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("30_d6ws0")
+texture_pressed = ExtResource("30_d6ws0")
+texture_hover = ExtResource("31_svl66")
+texture_disabled = ExtResource("32_gmerm")
 
 [node name="NextTile" type="TextureButton" parent="CanvasLayer/StatusBar"]
 layout_mode = 1
@@ -302,14 +307,37 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -35.0
-offset_top = -35.0
+offset_left = -73.0
+offset_top = -37.0
+offset_right = -38.0
+offset_bottom = -2.0
 texture_normal = ExtResource("8_28ygm")
 texture_pressed = ExtResource("8_28ygm")
 texture_hover = ExtResource("22_c3cgk")
 texture_disabled = ExtResource("14_jligr")
 
+[node name="HidePanel" type="TextureButton" parent="CanvasLayer/StatusBar"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -37.0
+offset_top = -36.0
+offset_right = -5.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+texture_normal = ExtResource("11_s3tua")
+texture_pressed = ExtResource("11_s3tua")
+texture_hover = ExtResource("16_ggb22")
+texture_disabled = ExtResource("12_daljj")
+
 [node name="SettingsMenu" parent="CanvasLayer" instance=ExtResource("33_sij56")]
+visible = false
+
+[node name="GoToPageMenu" parent="CanvasLayer" instance=ExtResource("37_svl66")]
 visible = false
 
 [node name="TargetBox" type="Control" parent="."]
@@ -359,6 +387,7 @@ color = Color(0, 1, 1, 1)
 [connection signal="pressed" from="CanvasLayer/Title/HideObjects" to="." method="_on_hide_objects_pressed"]
 [connection signal="pressed" from="CanvasLayer/Title/Undo" to="." method="_on_undo_pressed"]
 [connection signal="pressed" from="CanvasLayer/Title/Settings" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="CanvasLayer/StatusBar/HidePanel" to="." method="_on_hide_panel_pressed"]
 [connection signal="pressed" from="CanvasLayer/StatusBar/PreviousTile" to="." method="_on_previous_tile_pressed"]
+[connection signal="pressed" from="CanvasLayer/StatusBar/GoToPage" to="." method="_on_go_to_page_pressed"]
 [connection signal="pressed" from="CanvasLayer/StatusBar/NextTile" to="." method="_on_next_tile_pressed"]
+[connection signal="pressed" from="CanvasLayer/StatusBar/HidePanel" to="." method="_on_hide_panel_pressed"]

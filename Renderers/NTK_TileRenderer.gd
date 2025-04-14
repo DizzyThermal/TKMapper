@@ -28,8 +28,6 @@ func _init(tile_regex="tile\\d+\\.dat", tile_pal="tile.pal", tile_tbl="tile.tbl"
 		epfs.append(EpfFileHandler.new(DatFileHandler.new(file_name).get_file(file_name.replace("dat", "epf"))))
 
 	var tile_dat := DatFileHandler.new("tile.dat")
-	if not Debug.debug_pal_indices.is_empty():
-		print(tile_pal)
 	pal = PalFileHandler.new(tile_dat.get_file(tile_pal))
 	tbl = TileTblFileHandler.new(tile_dat.get_file(tile_tbl))
 	

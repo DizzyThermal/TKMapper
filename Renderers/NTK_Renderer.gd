@@ -16,9 +16,7 @@ func prune_cache(images_to_remove: int) -> void:
 		if len(keys_to_remove) >= images_to_remove:
 			break
 	for image_key in keys_to_remove:
-		print(len(images))
 		images.erase(image_key)
-		print(len(images))
 
 func create_pixel_data(
 		frame_index: int,

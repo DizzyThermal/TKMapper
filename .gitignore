@@ -3,5 +3,6 @@
 
 # TKMapper
 config.db
+Data/
 Maps/*.cmp
 !Maps/TK010000.cmp

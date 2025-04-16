@@ -111,7 +111,7 @@ func get_frame(frame_index: int, read_mask : bool=true) -> NTK_Frame:
 			print("DEBUG:     Mask Image Bytes:", frame.mask_image.get_data())
 
 	if frame_index not in self.frames:
-		print_rich("\n  [b][color=red][ERROR][/color]: Unable to find a valid data directory![/b]\n")
+		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames![/b]\n" % frame_index)
 		assert(false)
 
 	return frames[frame_index]

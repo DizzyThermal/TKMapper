@@ -11,12 +11,12 @@ var images: Dictionary[String, Image] = {}
 
 func prune_cache(images_to_remove: int) -> void:
 	var keys_to_remove: Array[String] = []
-	for image_key in images.keys():
+	for image_key in self.images.keys():
 		keys_to_remove.append(image_key)
 		if len(keys_to_remove) >= images_to_remove:
 			break
 	for image_key in keys_to_remove:
-		images.erase(image_key)
+		self.images.erase(image_key)
 
 func create_pixel_data(
 		frame_index: int,
@@ -61,8 +61,8 @@ func render_frame(
 		initial_color_offset: int=0,
 		render_animated: bool=false) -> Image:
 	var image_key := str(frame_index) + "-" + str(palette_index) + "-" + str(animated_color_offset) + "-" + str(initial_color_offset)
-	if image_key in images:
-		return images[image_key]
+	if image_key in self.images:
+		return self.images[image_key]
 
 	var frame := get_frame(frame_index)
 	var pixel_data := create_pixel_data(frame_index, palette_index, animated_color_offset, initial_color_offset)
@@ -71,11 +71,15 @@ func render_frame(
 		var image := Image.create(frame.width, frame.height, false, Image.FORMAT_RGBA8)
 		var mask_rect := Rect2i(0, 0, frame.mask_image.get_width(), frame.mask_image.get_height())
 		image.blit_rect_mask(frame_image, frame.mask_image, mask_rect, Vector2i(0, 0))
-		images[image_key] = image
+		self.images[image_key] = image
 	else:
-		images[image_key] = frame_image
+		self.images[image_key] = frame_image
 
-	return images[image_key]
+	if image_key not in self.images:
+		print_rich("\n  [b][color=red][ERROR][/color]: image_key: '%s' not in self.images![/b]\n" % image_key)
+		assert(false)
+
+	return self.images[image_key]
 
 func render_animated_frame(
 		frame_index: int,

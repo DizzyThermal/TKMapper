@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=39 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -37,6 +37,14 @@
 [ext_resource type="Texture2D" uid="uid://bcep1td534bpb" path="res://Images/origin-dark.svg" id="32_gmerm"]
 [ext_resource type="PackedScene" uid="uid://b3l8set3g0li7" path="res://Dialogs/SettingsMenu.tscn" id="33_sij56"]
 [ext_resource type="PackedScene" uid="uid://cjjuebkfsyuhh" path="res://Dialogs/GoToPageMenu.tscn" id="37_svl66"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_svl66"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 1, 1, 1)
 
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
@@ -341,42 +349,13 @@ visible = false
 [node name="GoToPageMenu" parent="CanvasLayer" instance=ExtResource("37_svl66")]
 visible = false
 
-[node name="TargetBox" type="Control" parent="."]
+[node name="TargetBox" type="Panel" parent="."]
 z_index = 3
-layout_mode = 3
-anchors_preset = 0
 offset_left = -24.0
 offset_top = -24.0
 offset_right = 24.0
 offset_bottom = 24.0
-
-[node name="Top" type="ColorRect" parent="TargetBox"]
-layout_mode = 0
-offset_right = 48.0
-offset_bottom = 1.0
-color = Color(0, 1, 1, 1)
-
-[node name="Right" type="ColorRect" parent="TargetBox"]
-layout_mode = 0
-offset_left = 47.0
-offset_top = 1.0
-offset_right = 48.0
-offset_bottom = 47.0
-color = Color(0, 1, 1, 1)
-
-[node name="Bottom" type="ColorRect" parent="TargetBox"]
-layout_mode = 0
-offset_top = 47.0
-offset_right = 48.0
-offset_bottom = 48.0
-color = Color(0, 1, 1, 1)
-
-[node name="Left" type="ColorRect" parent="TargetBox"]
-layout_mode = 0
-offset_top = 1.0
-offset_right = 1.0
-offset_bottom = 47.0
-color = Color(0, 1, 1, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_svl66")
 
 [connection signal="canceled" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_canceled"]
 [connection signal="file_selected" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_file_selected"]

@@ -44,7 +44,7 @@ var thread_ids: Array[int] = []
 @onready var tile_map := $TileMap
 @onready var objects := $Objects
 @onready var unpassables := $Unpassables
-@onready var target_box := $TargetBox
+@onready var target_box: Panel = $TargetBox
 @onready var title_bar := $CanvasLayer/Title
 @onready var tile_selection_area := $CanvasLayer/TileSelectionBackground
 @onready var object_selection_area := $CanvasLayer/ObjectSelectionBackground
@@ -278,6 +278,9 @@ func _process(delta):
 		cursor_tile.visible = true
 		target_box.visible = false
 		cursor_state = "Idle"
+	elif Input.is_key_pressed(KEY_ALT) and \
+			mouse_over_tile_map():
+		set_target_box_color(Color.CYAN)
 	else:
 		set_target_box_color(Color.GREEN)
 		cursor_tile.visible = true
@@ -492,10 +495,8 @@ func mouse_over_tile_map() -> bool:
 			not MapperState.over_status_bar
 
 func set_target_box_color(color: Color) -> void:
-	$TargetBox/Top.color = color
-	$TargetBox/Right.color = color
-	$TargetBox/Bottom.color = color
-	$TargetBox/Left.color = color
+	var target_box_stylebox: StyleBoxFlat = target_box.get_theme_stylebox("panel")
+	target_box_stylebox.border_color = color
 
 func load_map(map_path: String) -> void:
 	if map_renderer == null:

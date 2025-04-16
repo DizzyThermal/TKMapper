@@ -51,6 +51,7 @@ var thread_ids: Array[int] = []
 @onready var tile_set_container := $CanvasLayer/TileSelectionBackground/ScrollContainer/Container
 @onready var object_set_container := $CanvasLayer/ObjectSelectionBackground/ScrollContainer/HBoxContainer
 @onready var file_dialog := $CanvasLayer/Title/FileDialog
+@onready var title_label := $CanvasLayer/Title/TitleLabel 
 @onready var load_map_button := $CanvasLayer/Title/LoadMap
 @onready var save_map_button := $CanvasLayer/Title/SaveMap
 @onready var tile_mode_button := $CanvasLayer/Title/TileMode
@@ -119,8 +120,17 @@ func initialize() -> void:
 	get_viewport().connect("mouse_exited", func(): MapperState.over_window = false)
 
 	## Title Bar
-	title_bar.connect("mouse_entered", func(): MapperState.over_title_bar = true)
-	title_bar.connect("mouse_exited", func(): MapperState.over_title_bar = false)
+	title_bar.connect("mouse_entered", func(): 
+		MapperState.over_title_bar = true
+		MapperState.over_title_label = true
+	)
+	title_bar.connect("mouse_exited", func(): 
+		MapperState.over_title_bar = false
+		MapperState.over_title_label = false
+	)
+	
+	title_label.connect("mouse_entered", func(): MapperState.over_title_label = true)
+	title_label.connect("mouse_exited", func(): MapperState.over_title_label = false)
 
 	load_map_button.connect("mouse_entered", func(): MapperState.over_button = true)
 	load_map_button.connect("mouse_exited", func(): MapperState.over_button = false)
@@ -462,12 +472,17 @@ func _process(delta):
 
 func _input(event):
 	if event is InputEventMouseButton:
-		if not mouse_over_tile_map() and \
+		if MapperState.over_selection_area and \
 				not MapperState.menu_open:
 			if mode == MapMode.TILE:
 				update_cursor_preview(self.hover_tile_index)
 			elif mode == MapMode.OBJECT:
 				update_cursor_preview(self.hover_object_index)
+		elif MapperState.over_title_label and \
+				not MapperState.menu_open:
+			var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
+			var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))	
+			OS.shell_show_in_file_manager(last_map_dir)
 
 func mouse_over_tile_map() -> bool:
 	return	MapperState.over_window and \
@@ -522,6 +537,7 @@ func load_map(map_path: String) -> void:
 	undo_button.disabled = true
 	
 	$Camera2D.position = Vector2(-1000, 400)
+	title_label.text = Database.get_config_item_value("last_map_path").split("/")[-1]
 	change_to_tile_mode()
 
 func update_cursor_preview(index: int) -> void:

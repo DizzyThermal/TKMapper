@@ -76,6 +76,7 @@ offset_right = 72.0
 offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 text = "TKMapper"
 horizontal_alignment = 1
 vertical_alignment = 1

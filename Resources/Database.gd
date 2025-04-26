@@ -44,7 +44,7 @@ func _ready() -> void:
 			if FileAccess.file_exists(data_dir + "/tile.dat"):
 				upsert_config_item("data_dir", data_dir)
 				break
-	if not config_key_exists("last_map_path"):
+	if not config_key_exists("last_map_path") or not FileAccess.file_exists(get_config_item_value("last_map_path")):
 		upsert_config_item("last_map_path", default_last_map_path)
 	if not config_key_exists("tile_page_size"):
 		upsert_config_item("tile_page_size", default_tile_page_size)

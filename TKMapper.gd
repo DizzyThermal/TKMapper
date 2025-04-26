@@ -44,6 +44,8 @@ var thread_ids: Array[int] = []
 @onready var tile_map := $TileMap
 @onready var objects := $Objects
 @onready var unpassables := $Unpassables
+@onready var map_limits_box: Panel = $MapLimitsBox
+@onready var map_bounds_box: Panel = $MapBoundsBox
 @onready var target_box: Panel = $TargetBox
 @onready var title_bar := $CanvasLayer/Title
 @onready var tile_selection_area := $CanvasLayer/TileSelectionBackground
@@ -299,106 +301,115 @@ func _process(delta):
 			not Input.is_action_pressed("move-map") and \
 			not MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open:
-		if mouse_coordinate.x >= 0 and mouse_coordinate.y >= 0:
-			if mode == MapMode.TILE:
-				if current_tile_index not in map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
-					map_renderer.add_tile_to_tile_set_source(self, mouse_coordinate, current_tile_index)
+			not MapperState.menu_open and \
+			coordinate_on_map(mouse_coordinate):
+		if mode == MapMode.TILE:
+			if current_tile_index not in map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
+				map_renderer.add_tile_to_tile_set_source(self, mouse_coordinate, current_tile_index)
 
-				var previous_tile_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"]
-				if previous_tile_index != current_tile_index:
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"previous_index": previous_tile_index,
-						"new_index": current_tile_index,
-						"type": MapMode.TILE,
-					})
-					undo_button.disabled = false
-				tile_map.set_cell(0, mouse_coordinate, current_tile_index, Vector2i(0, 0))
+			var previous_tile_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"]
+			if previous_tile_index != current_tile_index:
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"previous_index": previous_tile_index,
+					"new_index": current_tile_index,
+					"type": MapMode.TILE,
+				})
 				undo_button.disabled = false
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"] = current_tile_index
-			elif mode == MapMode.OBJECT:
-				var previous_object_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"]
-				if previous_object_index != current_object_index:
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"previous_index": previous_object_index,
-						"new_index": current_object_index,
-						"type": MapMode.OBJECT,
-					})
-					undo_button.disabled = false
-				if mouse_coordinate in map_objects and \
-						map_objects[mouse_coordinate] != null:
-					map_objects[mouse_coordinate].queue_free()
-					map_objects[mouse_coordinate] = null
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"] = current_object_index
-				map_renderer.create_object(self, current_object_index, mouse_coordinate)
-				map_objects[mouse_coordinate] = objects.get_child(objects.get_child_count() - 1)
-			elif mode == MapMode.UNPASSABLE:
-				var unpassable = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"]
-				if not unpassable:
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"visible": true,
-						"type": MapMode.UNPASSABLE,
-					})
-					undo_button.disabled = false
-				if mouse_coordinate in map_unpassables and \
-						map_unpassables[mouse_coordinate] != null:
-					map_unpassables[mouse_coordinate].queue_free()
-					map_unpassables[mouse_coordinate] = null
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = true
-				var unpassable_sprite := Sprite2D.new()
-				unpassable_sprite.texture = load("res://Images/placeholder-red.svg")
-				unpassable_sprite.centered = false
-				unpassable_sprite.position = mouse_coordinate * Resources.tile_size_vector
-				unpassables.add_child(unpassable_sprite)
-				map_unpassables[mouse_coordinate] = unpassable_sprite
+			tile_map.set_cell(0, mouse_coordinate, current_tile_index, Vector2i(0, 0))
+			undo_button.disabled = false
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"] = current_tile_index
+		elif mode == MapMode.OBJECT:
+			var previous_object_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"]
+			if previous_object_index != current_object_index:
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"previous_index": previous_object_index,
+					"new_index": current_object_index,
+					"type": MapMode.OBJECT,
+				})
+				undo_button.disabled = false
+			if mouse_coordinate in map_objects and \
+					map_objects[mouse_coordinate] != null:
+				map_objects[mouse_coordinate].queue_free()
+				map_objects[mouse_coordinate] = null
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"] = current_object_index
+			map_renderer.create_object(self, current_object_index, mouse_coordinate)
+			map_objects[mouse_coordinate] = objects.get_child(objects.get_child_count() - 1)
+		elif mode == MapMode.UNPASSABLE:
+			var unpassable = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"]
+			if not unpassable:
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"visible": true,
+					"type": MapMode.UNPASSABLE,
+				})
+				undo_button.disabled = false
+			if mouse_coordinate in map_unpassables and \
+					map_unpassables[mouse_coordinate] != null:
+				map_unpassables[mouse_coordinate].queue_free()
+				map_unpassables[mouse_coordinate] = null
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = true
+			var unpassable_sprite := Sprite2D.new()
+			unpassable_sprite.texture = load("res://Images/placeholder-red.svg")
+			unpassable_sprite.centered = false
+			unpassable_sprite.position = mouse_coordinate * Resources.tile_size_vector
+			unpassables.add_child(unpassable_sprite)
+			map_unpassables[mouse_coordinate] = unpassable_sprite
+		
+		if mouse_coordinate.x + 1 > MapperState.map_size.x:
+			MapperState.map_size.x = mouse_coordinate.x + 1
+		if mouse_coordinate.y + 1 > MapperState.map_size.y:
+			MapperState.map_size.y = mouse_coordinate.y + 1
+		map_bounds_box.size = Vector2i(MapperState.map_size.x, MapperState.map_size.y) * Resources.tile_size
+
 	# Erase Tile on Left Mouse Button (LMB) - Eraser Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
 			MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open and \
-			mouse_coordinate.x >= 0 and \
-			mouse_coordinate.y >= 0:
-			if mode == MapMode.TILE:
-				var previous_tile_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"]
-				if previous_tile_index != -1:
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"previous_index": previous_tile_index,
-						"new_index": -1,
-						"type": MapMode.TILE,
-					})
-					undo_button.disabled = false
-				tile_map.set_cell(0, mouse_coordinate)
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"] = -1
-			elif mode == MapMode.OBJECT:
-				if mouse_coordinate in map_objects and \
-						map_objects[mouse_coordinate] != null:
-					map_objects[mouse_coordinate].queue_free()
-					map_objects[mouse_coordinate] = null
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"previous_index": map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"],
-						"new_index": -1,
-						"type": MapMode.OBJECT,
-					})
-					undo_button.disabled = false
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"] = -1
-			elif mode == MapMode.UNPASSABLE:
-				if mouse_coordinate in map_unpassables and \
-						map_unpassables[mouse_coordinate] != null:
-					map_unpassables[mouse_coordinate].queue_free()
-					map_unpassables[mouse_coordinate] = null
-					undo_stack.insert(0, {
-						"mouse_coordinate": mouse_coordinate,
-						"visible": false,
-						"type": MapMode.UNPASSABLE,
-					})
-					undo_button.disabled = false
-				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = false
+			coordinate_on_map(mouse_coordinate):
+		if mode == MapMode.TILE:
+			var previous_tile_index = map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"]
+			if previous_tile_index != -1:
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"previous_index": previous_tile_index,
+					"new_index": -1,
+					"type": MapMode.TILE,
+				})
+				undo_button.disabled = false
+			tile_map.set_cell(0, mouse_coordinate)
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["ab_index"] = -1
+		elif mode == MapMode.OBJECT:
+			if mouse_coordinate in map_objects and \
+					map_objects[mouse_coordinate] != null:
+				map_objects[mouse_coordinate].queue_free()
+				map_objects[mouse_coordinate] = null
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"previous_index": map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"],
+					"new_index": -1,
+					"type": MapMode.OBJECT,
+				})
+				undo_button.disabled = false
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["sobj_index"] = -1
+		elif mode == MapMode.UNPASSABLE:
+			if mouse_coordinate in map_unpassables and \
+					map_unpassables[mouse_coordinate] != null:
+				map_unpassables[mouse_coordinate].queue_free()
+				map_unpassables[mouse_coordinate] = null
+				undo_stack.insert(0, {
+					"mouse_coordinate": mouse_coordinate,
+					"visible": false,
+					"type": MapMode.UNPASSABLE,
+				})
+				undo_button.disabled = false
+			map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = false
+
+		MapperState.map_size = calculate_map_size()
+		map_bounds_box.size = MapperState.map_size * Resources.tile_size
 	# Copy Tile on Right Mouse Button (RMB) - Default Mode
 	if Input.is_action_just_pressed("copy-tile") and \
 			cursor_state == "Idle" and \
@@ -407,7 +418,7 @@ func _process(delta):
 		var cursor_tile_coord := get_global_mouse_position()
 		cursor_tile_coord.x = floor(cursor_tile_coord.x / Resources.tile_size)
 		cursor_tile_coord.y = floor(cursor_tile_coord.y / Resources.tile_size)
-		if cursor_tile_coord.x >= 0 and cursor_tile_coord.y >= 0:
+		if coordinate_on_map(cursor_tile_coord):
 			var index: int = map_tiles[cursor_tile_coord.y][cursor_tile_coord.x]["ab_index"]
 			if mode == MapMode.OBJECT:
 				index = map_tiles[cursor_tile_coord.y][cursor_tile_coord.x]["sobj_index"]
@@ -425,8 +436,7 @@ func _process(delta):
 					load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 	# Tile Preview
-	if mouse_coordinate.x >= 0 and \
-			mouse_coordinate.y >= 0 and \
+	if coordinate_on_map(mouse_coordinate) and \
 			mouse_position.y >= 4 and \
 			not grabbing_map and \
 			mouse_over_tile_map() and \
@@ -494,6 +504,12 @@ func mouse_over_tile_map() -> bool:
 			not MapperState.over_selection_area and \
 			not MapperState.over_status_bar
 
+func coordinate_on_map(coordinate: Vector2i) -> bool:
+	return coordinate.x >= 0 and \
+		coordinate.x <= 255 and \
+		coordinate.y >= 0 and \
+		coordinate.y <= 255
+
 func set_target_box_color(color: Color) -> void:
 	var target_box_stylebox: StyleBoxFlat = target_box.get_theme_stylebox("panel")
 	target_box_stylebox.border_color = color
@@ -536,9 +552,11 @@ func load_map(map_path: String) -> void:
 			map_unpassables[Vector2i(x, y)] = unpassable_sprite
 	undo_stack.clear()
 	undo_button.disabled = true
+	MapperState.map_size = Vector2i(map_renderer.cmp.width, map_renderer.cmp.height)
+	map_bounds_box.size = MapperState.map_size * Resources.tile_size
 	
 	$Camera2D.position = Vector2(-1000, 400)
-	title_label.text = Database.get_config_item_value("last_map_path").split("/")[-1]
+	title_label.text = Database.get_config_item_value("last_map_path").split("/")[-1].replace(".cmp", "")
 	change_to_tile_mode()
 
 func update_cursor_preview(index: int) -> void:
@@ -648,6 +666,7 @@ func _on_load_map_pressed():
 func _save_map():
 	# Select Map to Save
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
+	file_dialog.current_file = Database.get_config_item_value("last_map_path").split("/")[-1]
 	MapperState.menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
 
@@ -668,6 +687,29 @@ func clear_map() -> void:
 func update_last_map_path(map_path: String) -> void:
 	Database.upsert_config_item("last_map_path", map_path.replace("\\", "/"))
 
+func calculate_map_size() -> Vector2i:
+	var map_size: Vector2i = Vector2i(0, 0)
+
+	var row_counter := 0
+	for row in map_tiles:
+		var empty_row := true
+		var tile_counter := 0
+		for tile in row:
+			var empty_tile := true
+			if tile["ab_index"] > 0 or \
+					tile["sobj_index"] >= 0 or \
+					tile["unpassable"]:
+				empty_row = false
+				empty_tile = false
+			tile_counter += 1
+			if not empty_tile and tile_counter > map_size.x:
+				map_size.x = tile_counter
+		row_counter += 1
+		if not empty_row and row_counter > map_size.y:
+			map_size.y = row_counter
+	
+	return map_size
+
 func _on_file_dialog_file_selected(map_path: String):
 	if file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_OPEN_FILE:
 		# Load Map from Path
@@ -676,30 +718,15 @@ func _on_file_dialog_file_selected(map_path: String):
 			load_map(map_path)
 			update_last_map_path(map_path)
 	elif file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
-		# Save - Update Cmp
-		var max_width := 0
-		var max_height := 0
-		var row_counter := 0
-		for row in map_tiles:
-			var empty_row := true
-			var tile_counter := 0
-			for tile in row:
-				var empty_tile := true
-				if tile["ab_index"] > 0 or \
-						tile["sobj_index"] >= 0 or \
-						tile["unpassable"]:
-					empty_row = false
-					empty_tile = false
-				tile_counter += 1
-				if not empty_tile and tile_counter > max_width:
-					max_width = tile_counter
-			row_counter += 1
-			if not empty_row and row_counter > max_height:
-				max_height = row_counter
+		MapperState.map_size = calculate_map_size()
+		map_bounds_box.size = MapperState.map_size * Resources.tile_size
 
-		map_renderer.cmp.update_map(max_width, max_height, map_tiles)
+		map_renderer.cmp.update_map(MapperState.map_size.x, MapperState.map_size.y, map_tiles)
 		map_renderer.cmp.save_to_file(map_path)
 		update_last_map_path(map_path)
+		if map_path.ends_with(".cmp"):
+			load_map(map_path)
+			update_last_map_path(map_path)
 
 	set_menu_closed()
 
@@ -813,6 +840,8 @@ func undo() -> void:
 					map_unpassables[mouse_coordinate].queue_free()
 					map_unpassables[mouse_coordinate] = null
 				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = false
+		MapperState.map_size = calculate_map_size()
+		map_bounds_box.size = MapperState.map_size * Resources.tile_size
 
 	if not undo_stack:
 		undo_stack.clear()

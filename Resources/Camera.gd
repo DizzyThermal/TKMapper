@@ -5,7 +5,7 @@ var screen_start_position
 
 var dragging = false
 
-var min_zoom = 0.25
+var min_zoom = 0.1
 var max_zoom = 2
 
 func _input(event):
@@ -17,4 +17,4 @@ func _input(event):
 		else:
 			dragging = false
 	elif event is InputEventMouseMotion and dragging:
-		position = zoom * (mouse_start_pos - event.position) + screen_start_position
+		position = (Vector2(1, 1) / zoom) * (mouse_start_pos - event.position) + screen_start_position

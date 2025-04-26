@@ -114,4 +114,4 @@ func get_frame(frame_index: int, read_mask : bool=true) -> NTK_Frame:
 		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames![/b]\n" % frame_index)
 		assert(false)
 
-	return frames[frame_index]
+	return self.frames[frame_index] if frame_index in self.frames else frame

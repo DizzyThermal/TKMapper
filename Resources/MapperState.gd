@@ -9,3 +9,5 @@ var over_selection_area := false
 var over_button := false
 var objects_hidden := false
 var is_erase_mode := false
+
+var map_size: Vector2i = Vector2i(1, 1)

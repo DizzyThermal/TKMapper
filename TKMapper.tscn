@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=41 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -46,6 +46,22 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0, 1, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gmerm"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 1
+border_color = Color(0.160784, 0.160784, 0.4, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_52rl1"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.631373, 0.25098, 0.631373, 1)
+
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
 
@@ -61,6 +77,24 @@ z_index = 2
 
 [node name="Unpassables" type="Node2D" parent="."]
 z_index = 3
+
+[node name="TargetBox" type="Panel" parent="."]
+z_index = 3
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_svl66")
+
+[node name="MapLimitsBox" type="Panel" parent="."]
+offset_right = 12288.0
+offset_bottom = 12288.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_gmerm")
+
+[node name="MapBoundsBox" type="Panel" parent="."]
+offset_right = 48.0
+offset_bottom = 48.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_52rl1")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -348,14 +382,6 @@ visible = false
 
 [node name="GoToPageMenu" parent="CanvasLayer" instance=ExtResource("37_svl66")]
 visible = false
-
-[node name="TargetBox" type="Panel" parent="."]
-z_index = 3
-offset_left = -24.0
-offset_top = -24.0
-offset_right = 24.0
-offset_bottom = 24.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_svl66")
 
 [connection signal="canceled" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_canceled"]
 [connection signal="file_selected" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_file_selected"]

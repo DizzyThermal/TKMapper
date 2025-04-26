@@ -79,7 +79,7 @@ func render_frame(
 		print_rich("\n  [b][color=red][ERROR][/color]: image_key: '%s' not in self.images![/b]\n" % image_key)
 		assert(false)
 
-	return self.images[image_key]
+	return self.images[image_key] if image_key in self.images else frame_image
 
 func render_animated_frame(
 		frame_index: int,

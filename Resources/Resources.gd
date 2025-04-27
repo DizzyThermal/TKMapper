@@ -28,6 +28,13 @@ enum Gender {
 	FEMALE = 1,
 }
 
+enum Direction {
+	UP = 0,
+	RIGHT = 1,
+	DOWN = 2,
+	LEFT = 3,
+}
+
 func _init():
 	if OS.get_name() == "Windows":
 		desktop_dir = OS.get_environment("USERPROFILE") + "/Desktop/"

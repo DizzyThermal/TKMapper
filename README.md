@@ -40,6 +40,10 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 * ` RIGHT `: Loads Next Tile/Object Selection Page
 * ` UP `: Shows Tile/Object Selection Page
 * ` DOWN `: Hides Tile/Object Selection Page
+* ` SHIFT + UP `: Shifts Map Up (NOT Undoable)
+* ` SHIFT + RIGHT `: Shifts Map Right (NOT Undoable)
+* ` SHIFT + DOWN `: Shifts Map Down (NOT Undoable)
+* ` SHIFT + LEFT `: Shifts Map Left (NOT Undoable)
 
 ### Mouse Shortcuts
 

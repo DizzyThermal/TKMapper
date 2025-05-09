@@ -41,12 +41,14 @@ var map_unpassables := {}
 var thread_ids: Array[int] = []
 
 # Scene Nodes
+@onready var camera: Camera2D = $Camera2D
 @onready var tile_map := $TileMap
 @onready var objects := $Objects
 @onready var unpassables := $Unpassables
+@onready var target_box: Panel = $TargetBox
 @onready var map_limits_box: Panel = $MapLimitsBox
 @onready var map_bounds_box: Panel = $MapBoundsBox
-@onready var target_box: Panel = $TargetBox
+@onready var tool_tip_label: Label = $CanvasLayer/ToolTipLabel
 @onready var title_bar := $CanvasLayer/Title
 @onready var tile_selection_area := $CanvasLayer/TileSelectionBackground
 @onready var object_selection_area := $CanvasLayer/ObjectSelectionBackground
@@ -65,9 +67,10 @@ var thread_ids: Array[int] = []
 @onready var status_bar := $CanvasLayer/StatusBar
 @onready var page_info_label := $CanvasLayer/StatusBar/PageInfoLabel
 @onready var status_label := $CanvasLayer/StatusBar/StatusLabel
-@onready var hide_panel_button := $CanvasLayer/StatusBar/HidePanel
-@onready var next_button := $CanvasLayer/StatusBar/NextTile
 @onready var prev_button := $CanvasLayer/StatusBar/PreviousTile
+@onready var goto_page_button := $CanvasLayer/StatusBar/GoToPage
+@onready var next_button := $CanvasLayer/StatusBar/NextTile
+@onready var hide_panel_button := $CanvasLayer/StatusBar/HidePanel
 @onready var settings_menu := $CanvasLayer/SettingsMenu
 @onready var data_dir_line_edit := $CanvasLayer/SettingsMenu/VBoxContainer/DataDirectoryContainer/LineEdit
 @onready var tile_page_size_spinbox := $CanvasLayer/SettingsMenu/VBoxContainer/TilePageSizeContainer/SpinBox
@@ -94,8 +97,8 @@ func initialize() -> void:
 	map_regex.compile("TK(\\d+).cmp")
 
 	# Camera Limits
-	$Camera2D.limit_left = 0
-	$Camera2D.limit_top = -480
+	camera.limit_left = 0
+	camera.limit_top = -480
 
 	# Load Map
 	load_map(Database.get_config_item_value("last_map_path"))
@@ -134,29 +137,77 @@ func initialize() -> void:
 	title_label.connect("mouse_entered", func(): MapperState.over_title_label = true)
 	title_label.connect("mouse_exited", func(): MapperState.over_title_label = false)
 
-	load_map_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	load_map_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	load_map_button.connect("mouse_entered", func(): 
+		MapperState.over_button = true
+		update_tool_tip("Load Map (L)", load_map_button.global_position + Vector2(10, 42))
+	)
+	load_map_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	save_map_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	save_map_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	save_map_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Save Map (S)", save_map_button.global_position + Vector2(-24, 42))
+	)
+	save_map_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	tile_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	tile_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	tile_mode_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Tile Mode (T)", tile_mode_button.global_position + Vector2(-32, 42))
+	)
+	tile_mode_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	object_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	object_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	object_mode_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Object Mode (O)", object_mode_button.global_position + Vector2(-42, 42))
+	)
+	object_mode_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	unpassable_mode_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	unpassable_mode_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	unpassable_mode_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Unpassable Mode (P)", unpassable_mode_button.global_position + Vector2(-64, 42))
+	)
+	unpassable_mode_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	hide_objects_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	hide_objects_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	hide_objects_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Hide Objects (H)", hide_objects_button.global_position + Vector2(-38, 42))
+	)
+	hide_objects_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	undo_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	undo_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	undo_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Undo (U)", undo_button.global_position + Vector2(-16, 42))
+	)
+	undo_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 	
-	settings_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	settings_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	settings_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Settings", settings_button.global_position + Vector2(-36, 42))
+	)
+	settings_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
 	## Selection Area
 	tile_selection_area.connect("mouse_entered", func(): MapperState.over_selection_area = true)
@@ -172,17 +223,49 @@ func initialize() -> void:
 	page_info_label.connect("mouse_entered", func(): MapperState.over_status_bar = true)
 	page_info_label.connect("mouse_exited", func(): MapperState.over_status_bar = false)
 
-	hide_panel_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	hide_panel_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	prev_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Previous Page (←)", prev_button.global_position + Vector2(-48, -30))
+	)
+	prev_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	prev_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	prev_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	goto_page_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Goto Page (G)", goto_page_button.global_position + Vector2(-50, -30))
+	)
+	goto_page_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	goto_page.connect("mouse_entered", func(): MapperState.over_button = true)
-	goto_page.connect("mouse_exited", func(): MapperState.over_button = false)
+	next_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		update_tool_tip("Next Page (→)", next_button.global_position + Vector2(-56, -30))
+	)
+	next_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		update_tool_tip("")
+	)
 
-	next_button.connect("mouse_entered", func(): MapperState.over_button = true)
-	next_button.connect("mouse_exited", func(): MapperState.over_button = false)
+	hide_panel_button.connect("mouse_entered", func():
+		MapperState.over_button = true
+		MapperState.over_toggle_selection_area_button = true
+		var verb := "Hide" if tile_selection_area.visible or object_selection_area.visible else "Show"
+		var selection_area := "Tile Panel" if mode == MapMode.TILE else "Object Panel"
+		var shortcut := "(↓)" if verb == "Hide" else "(↑)"
+		update_tool_tip(
+			"%s %s %s" % [verb, selection_area, shortcut],
+			next_button.global_position + Vector2(-92, -30)
+		)
+	)
+	hide_panel_button.connect("mouse_exited", func():
+		MapperState.over_button = false
+		MapperState.over_toggle_selection_area_button = false
+		update_tool_tip("")
+	)
 
 	# Settings Panel
 	data_dir_line_edit.text = Database.get_config_item_value("data_dir")
@@ -411,18 +494,18 @@ func _process(delta):
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open:
-		if $Camera2D.zoom.x <= camera_max_zoom:
-			$Camera2D.zoom.x *= 1.5
-		if $Camera2D.zoom.y <= camera_max_zoom:
-			$Camera2D.zoom.y *= 1.5
+		if camera.zoom.x <= camera_max_zoom:
+			camera.zoom.x *= 1.5
+		if camera.zoom.y <= camera_max_zoom:
+			camera.zoom.y *= 1.5
 	if Input.is_action_just_pressed("zoom-out") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open:
-		if $Camera2D.zoom.x >= camera_min_zoom:
-			$Camera2D.zoom.x /= 1.5
-		if $Camera2D.zoom.y >= camera_min_zoom:
-			$Camera2D.zoom.y /= 1.5
+		if camera.zoom.x >= camera_min_zoom:
+			camera.zoom.x /= 1.5
+		if camera.zoom.y >= camera_min_zoom:
+			camera.zoom.y /= 1.5
 
 	if mouse_over_tile_map() and \
 			not MapperState.menu_open:
@@ -443,16 +526,21 @@ func _input(event):
 				update_cursor_preview(self.hover_tile_index)
 			elif mode == MapMode.OBJECT:
 				update_cursor_preview(self.hover_object_index)
-		elif MapperState.over_title_label and \
-				not MapperState.menu_open:
-			var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
-			var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))	
-			OS.shell_show_in_file_manager(last_map_dir)
+
+func update_tool_tip(
+		tool_tip_text: String,
+		tool_tip_position: Vector2=Vector2(0, 0)) -> void:
+	tool_tip_label.visible = false
+	tool_tip_label.size = Vector2(0, 0)
+	tool_tip_label.text = tool_tip_text
+	tool_tip_label.position = tool_tip_position
+	tool_tip_label.visible = true if len(tool_tip_text) > 0 else false
 
 func mouse_over_tile_map() -> bool:
 	return	MapperState.over_window and \
 			not MapperState.over_button and \
 			not MapperState.over_title_bar and \
+			not MapperState.over_title_label and \
 			not MapperState.over_selection_area and \
 			not MapperState.over_status_bar
 
@@ -507,7 +595,7 @@ func load_map(map_path: String) -> void:
 	MapperState.map_size = Vector2i(map_renderer.cmp.width, map_renderer.cmp.height)
 	map_bounds_box.size = MapperState.map_size * Resources.tile_size
 	
-	$Camera2D.position = Vector2(-1000, 400)
+	camera.position = Vector2(-1000, 400)
 	title_label.text = Database.get_config_item_value("last_map_path").split("/")[-1].replace(".cmp", "")
 	change_to_tile_mode()
 
@@ -904,10 +992,10 @@ func _on_file_dialog_file_selected(map_path: String):
 
 	set_menu_closed()
 
-func set_menu_closed() -> void:
+func set_menu_closed(delay: float=0.2) -> void:
 	var menu_closed_timer := Timer.new()
 	
-	menu_closed_timer.wait_time = 0.5
+	menu_closed_timer.wait_time = delay
 	menu_closed_timer.one_shot = true
 	menu_closed_timer.autostart = true
 
@@ -1027,9 +1115,12 @@ func _on_undo_pressed():
 	undo()
 
 func _on_settings_pressed():
-	MapperState.menu_open = not settings_menu.visible
-	settings_menu.visible = MapperState.menu_open
+	settings_menu.visible = not settings_menu.visible
 	settings_menu.status_label.text = ""
+	if not settings_menu.visible:
+		set_menu_closed()
+	else:
+		MapperState.menu_open = true
 
 func change_to_tile_mode() -> void:
 	_toggle_selection_area(true, false)
@@ -1103,6 +1194,16 @@ func _toggle_selection_area(
 		hidden = true
 		tile_selection_area.visible = false
 		object_selection_area.visible = false
+
+	# Update Hover
+	if MapperState.over_toggle_selection_area_button:
+		var verb := "Hide" if tile_selection_area.visible or object_selection_area.visible else "Show"
+		var selection_area := "Tile Panel" if mode == MapMode.TILE else "Object Panel"
+		var shortcut := "(↓)" if verb == "Hide" else "(↑)"
+		update_tool_tip(
+			"%s %s %s" % [verb, selection_area, shortcut],
+			next_button.global_position + Vector2(-92, -30)
+		)
 	
 	if hidden:
 		hide_panel_button.texture_normal = load("res://Images/eye-crossed.svg")
@@ -1134,8 +1235,11 @@ func  _goto_page(page_number: int):
 			load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 func _on_go_to_page_pressed():
-	MapperState.menu_open = not goto_page.visible
-	goto_page.visible = MapperState.menu_open
+	goto_page.visible = not goto_page.visible
+	if not goto_page.visible:
+		set_menu_closed()
+	else:
+		MapperState.menu_open = true
 
 func _on_hide_panel_pressed():
 	_toggle_selection_area()

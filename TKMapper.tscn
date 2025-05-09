@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene load_steps=42 format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -62,6 +62,22 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.631373, 0.25098, 0.631373, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d5gi8"]
+bg_color = Color(0.239216, 0.239216, 0.239216, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+expand_margin_left = 8.0
+expand_margin_top = 4.0
+expand_margin_right = 8.0
+expand_margin_bottom = 4.0
+
 [node name="TKMapper" type="Node2D"]
 script = ExtResource("1_s3pl7")
 
@@ -97,6 +113,15 @@ offset_bottom = 48.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_52rl1")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ToolTipLabel" type="Label" parent="CanvasLayer"]
+visible = false
+z_index = 1
+offset_right = 40.0
+offset_bottom = 25.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_d5gi8")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Title" type="ColorRect" parent="CanvasLayer"]
 anchors_preset = 10

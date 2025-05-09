@@ -36,14 +36,14 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 * ` i|1 `: Insert Mode: Enters Insert Mode for Tiles/Objects
 * ` d|e|x|2 `: Delete Mode: Enters Delete Mode for Tiles/Objects
 * ` g `: Goto Page: Loads Tile/Object Page from Prompt
-* ` LEFT `: Loads Previous Tile/Object Selection Page
-* ` RIGHT `: Loads Next Tile/Object Selection Page
-* ` UP `: Shows Tile/Object Selection Page
-* ` DOWN `: Hides Tile/Object Selection Page
-* ` SHIFT + UP `: Shifts Map Up (NOT Undoable)
-* ` SHIFT + RIGHT `: Shifts Map Right (NOT Undoable)
-* ` SHIFT + DOWN `: Shifts Map Down (NOT Undoable)
-* ` SHIFT + LEFT `: Shifts Map Left (NOT Undoable)
+* ` ← `: Loads Previous Tile/Object Selection Page
+* ` → `: Loads Next Tile/Object Selection Page
+* ` ↑ `: Shows Tile/Object Selection Page
+* ` ↓ `: Hides Tile/Object Selection Page
+* ` Shift + ↑ `: Shifts Map Up (NOT Undoable)
+* ` Shift + → `: Shifts Map Right (NOT Undoable)
+* ` Shift + ↓ `: Shifts Map Down (NOT Undoable)
+* ` Shift + ← `: Shifts Map Left (NOT Undoable)
 
 ### Mouse Shortcuts
 

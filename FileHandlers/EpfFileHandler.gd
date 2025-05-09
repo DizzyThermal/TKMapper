@@ -29,7 +29,11 @@ func _init(file):
 	pixel_data_length = read_u32(file_position)
 	file_position += 4
 
-func get_frame(frame_index: int, read_mask : bool=true) -> NTK_Frame:
+func get_frame(
+		frame_index: int,
+		read_mask: bool=true,
+		debug_attempt: int=1,
+		debug_attempt_limit: int=5) -> NTK_Frame:
 	# Frame Cache
 	if frame_index in self.frames:
 		return self.frames[frame_index]
@@ -111,7 +115,10 @@ func get_frame(frame_index: int, read_mask : bool=true) -> NTK_Frame:
 			print("DEBUG:     Mask Image Bytes:", frame.mask_image.get_data())
 
 	if frame_index not in self.frames:
-		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames![/b]\n" % frame_index)
+		print_rich("\n  [b][color=orange][WARNING][/color]: frame_index: '%s' not in self.frames![/b]\n" % frame_index)
+		get_frame(frame_index, read_mask, debug_attempt + 1)
+	if frame_index not in self.frames and debug_attempt > debug_attempt_limit:
+		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames after![/b]\n" % frame_index, debug_attempt_limit)
 		assert(false)
 
 	return self.frames[frame_index] if frame_index in self.frames else frame

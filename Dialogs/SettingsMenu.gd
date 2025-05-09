@@ -14,7 +14,7 @@ func set_parent(new_parent: Node2D) -> void:
 
 func _on_close_button_pressed():
 	visible = false
-	MapperState.menu_open = false
+	parent.set_menu_closed()
 	status_label.text = ""
 
 func _on_data_directory_line_edit_text_submitted(new_data_dir_path):

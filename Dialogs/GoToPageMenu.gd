@@ -9,9 +9,9 @@ func set_parent(new_parent: Node2D) -> void:
 
 func _on_close_button_pressed():
 	visible = false
-	MapperState.menu_open = false
+	parent.set_menu_closed()
 
 func _on_spin_box_value_changed(new_page_number):
 	parent._goto_page(new_page_number - 1)
 	visible = false
-	MapperState.menu_open = false
+	parent.set_menu_closed()

@@ -7,6 +7,7 @@ var over_title_label := false
 var over_status_bar := false
 var over_selection_area := false
 var over_button := false
+var over_toggle_selection_area_button := false
 var objects_hidden := false
 var is_erase_mode := false
 var shifting := false

@@ -116,9 +116,13 @@ func get_frame(
 
 	if frame_index not in self.frames:
 		print_rich("\n  [b][color=orange][WARNING][/color]: frame_index: '%s' not in self.frames![/b]\n" % frame_index)
-		get_frame(frame_index, read_mask, debug_attempt + 1)
+		get_frame(
+			frame_index,
+			read_mask,
+			debug_attempt + 1
+		)
 	if frame_index not in self.frames and debug_attempt > debug_attempt_limit:
-		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames after![/b]\n" % frame_index, debug_attempt_limit)
+		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames after %d attempts![/b]\n" % frame_index, debug_attempt_limit)
 		assert(false)
 
 	return self.frames[frame_index] if frame_index in self.frames else frame

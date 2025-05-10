@@ -59,7 +59,9 @@ func render_frame(
 		palette_index: int=0,
 		animated_color_offset: int=0,
 		initial_color_offset: int=0,
-		render_animated: bool=false) -> Image:
+		render_animated: bool=false,
+		debug_attempt: int=1,
+		debug_attempt_limit: int=5) -> Image:
 	var image_key := str(frame_index) + "-" + str(palette_index) + "-" + str(animated_color_offset) + "-" + str(initial_color_offset)
 	if image_key in self.images:
 		return self.images[image_key]
@@ -76,6 +78,16 @@ func render_frame(
 		self.images[image_key] = frame_image
 
 	if image_key not in self.images:
+		print_rich("\n  [b][color=orange][WARNING][/color]: image_key: '%s' not in self.images![/b]\n" % image_key)
+		render_frame(
+			frame_index,
+			palette_index,
+			animated_color_offset,
+			initial_color_offset,
+			render_animated,
+			debug_attempt + 1
+		)
+	if image_key not in self.images and debug_attempt > debug_attempt_limit:
 		print_rich("\n  [b][color=red][ERROR][/color]: image_key: '%s' not in self.images![/b]\n" % image_key)
 		assert(false)
 

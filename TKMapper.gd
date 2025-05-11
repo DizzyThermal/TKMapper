@@ -589,7 +589,7 @@ func _process(delta):
 			mouse_over_tile_map() and \
 			not MapperState.menu_open:
 		var adjusted_height := Vector2i(0, 0)
-		if mode == MapMode.OBJECT:
+		if mode == MapMode.OBJECT and current_object_index >= 0:
 			var object_height: int = map_renderer.sobj_renderer.sobj.objects[current_object_index].height
 			adjusted_height.y = Resources.tile_size * (object_height - 1)
 		if MapperState.copying_multiple \

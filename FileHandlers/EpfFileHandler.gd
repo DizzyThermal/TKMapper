@@ -97,7 +97,9 @@ func get_frame(
 	var mask_image := Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, mask_byte_array)
 
 	var frame := NTK_Frame.new(left, top, right, bottom, width, height, raw_pixel_data, mask_image)
+	mutex.lock()
 	self.frames[frame_index] = frame
+	mutex.unlock()
 
 	if frame_index in Debug.debug_frame_indices:
 		print("DEBUG: EPF Frame[", frame_index, "]:")

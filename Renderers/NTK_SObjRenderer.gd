@@ -7,22 +7,27 @@ var sobj: SObjTblFileHandler = null
 
 var object_images := {}
 
+var mutex: Mutex = Mutex.new()
+
+func _init():
+	var start_time := Time.get_ticks_msec()
+
+	tilec_renderer = NTK_TileRenderer.new("tilec\\d+\\.dat", "TileC.pal", "TILEC.TBL")
+	sobj = SObjTblFileHandler.new(DatFileHandler.new("tile.dat").get_file("SObj.tbl"))
+
+	if Debug.debug_renderer_timings:
+		print("[SObjRenderer]: ", Time.get_ticks_msec() - start_time, " ms")
+
 func prune_cache(images_to_remove: int) -> void:
 	var keys_to_remove: Array[int] = []
 	for image_key in object_images.keys():
 		keys_to_remove.append(image_key)
 		if len(keys_to_remove) >= images_to_remove:
 			break
+	mutex.lock()
 	for image_key in keys_to_remove:
 		object_images.erase(image_key)
-
-func _init():
-	var start_time := Time.get_ticks_msec()
-	tilec_renderer = NTK_TileRenderer.new("tilec\\d+\\.dat", "TileC.pal", "TILEC.TBL")
-	sobj = SObjTblFileHandler.new(DatFileHandler.new("tile.dat").get_file("SObj.tbl"))
-	
-	if Debug.debug_renderer_timings:
-		print("[SObjRenderer]: ", Time.get_ticks_msec() - start_time, " ms")
+	mutex.unlock()
 
 func render_object(object_index: int) -> ImageTexture:
 	var object: SObj = sobj.objects[object_index]
@@ -40,7 +45,9 @@ func render_object(object_index: int) -> ImageTexture:
 				frame.mask_image,
 				frame_rect,
 				Vector2i(frame.left, (actual_height - i - 1) * Resources.tile_size + frame.top))
+			mutex.lock()
 			object_images[object_index] = object_image
+			mutex.unlock()
 
 	if object_index in object_images:
 		return ImageTexture.create_from_image(object_images[object_index])

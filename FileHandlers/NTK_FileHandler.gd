@@ -3,6 +3,8 @@ class_name NTK_FileHandler extends Node
 var file_bytes := PackedByteArray()
 var file_size := 0
 
+var mutex: Mutex = Mutex.new()
+
 func _init(file, data_directory=Database.get_config_item_value("data_dir")):
 	if file is PackedByteArray:
 		file_bytes = file

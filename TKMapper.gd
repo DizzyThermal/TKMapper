@@ -1106,10 +1106,7 @@ func _on_file_dialog_file_selected(map_path: String):
 		map_renderer.cmp.update_map(MapperState.map_size.x, MapperState.map_size.y, map_tiles)
 		map_renderer.cmp.save_to_file(map_path)
 		update_last_map_path(map_path)
-		if map_path.ends_with(".cmp"):
-			load_map(map_path)
-			update_last_map_path(map_path)
-
+		load_map(map_path)
 	set_menu_closed()
 
 func set_menu_closed(delay: float=0.2) -> void:

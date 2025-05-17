@@ -9,6 +9,8 @@ var pal: PalFileHandler = null
 
 var images: Dictionary[String, Image] = {}
 
+var mutex: Mutex = Mutex.new()
+
 func prune_cache(images_to_remove: int) -> void:
 	var keys_to_remove: Array[String] = []
 	for image_key in self.images.keys():
@@ -73,9 +75,13 @@ func render_frame(
 		var image := Image.create(frame.width, frame.height, false, Image.FORMAT_RGBA8)
 		var mask_rect := Rect2i(0, 0, frame.mask_image.get_width(), frame.mask_image.get_height())
 		image.blit_rect_mask(frame_image, frame.mask_image, mask_rect, Vector2i(0, 0))
+		mutex.lock()
 		self.images[image_key] = image
+		mutex.unlock()
 	else:
+		mutex.lock()
 		self.images[image_key] = frame_image
+		mutex.unlock()
 
 	if image_key not in self.images:
 		print_rich("\n  [b][color=orange][WARNING][/color]: image_key: '%s' not in self.images![/b]\n" % image_key)

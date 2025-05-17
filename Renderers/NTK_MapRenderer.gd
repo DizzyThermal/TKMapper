@@ -14,11 +14,14 @@ var objects := {}
 var ntk_tileset_source := NTK_TileSetSource.new()
 var thread_ids: Array[int] = []
 
+var mutex: Mutex = Mutex.new()
+
 func _init():
 	var start_time := Time.get_ticks_msec()
+
 	tile_renderer = NTK_TileRenderer.new()
 	sobj_renderer = NTK_SObjRenderer.new()
-	
+
 	if Debug.debug_renderer_timings:
 		print("[MapRenderer]: ", Time.get_ticks_msec() - start_time, " ms")
 
@@ -161,7 +164,8 @@ func add_tile_to_tile_set_source(
 				0, 0,
 				false))
 		tile_set_source.create_tile(Vector2i(0, 0))
-	parent.tile_map.tile_set.add_source(tile_set_source, tile_index)
+	if not parent.tile_map.tile_set.has_source(tile_index):
+		parent.tile_map.tile_set.add_source(tile_set_source, tile_index)
 
 func prerender_tile(thread_index: int) -> void:
 	var tile_index: int = thread_ids[thread_index]
@@ -191,7 +195,10 @@ func prerender_tile(thread_index: int) -> void:
 				palette_index,
 				false))
 		tile_set_source.create_tile(Vector2i(0, 0))
-	self.tile_set.add_source(tile_set_source, tile_index)
+	if not self.tile_set.has_source(tile_index):
+		mutex.lock()
+		self.tile_set.add_source.call_deferred(tile_set_source, tile_index)
+		mutex.unlock()
 
 func create_tile_set() -> void:
 	tile_set = TileSet.new()
@@ -264,7 +271,9 @@ func clear_objects(objects: Node2D):
 
 func create_object(parent: Node2D, sobj_index: int, location: Vector2i) -> void:
 	if sobj_index not in objects:
+		mutex.lock()
 		objects[sobj_index] = sobj_renderer.render_object(sobj_index)
+		mutex.unlock()
 	
 	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
 	var sobj_height := sobj.height
@@ -280,7 +289,9 @@ func create_object(parent: Node2D, sobj_index: int, location: Vector2i) -> void:
 	obj_sprite.z_index = 1
 	obj_sprite.z_as_relative = false
 
+	mutex.lock()
 	parent.objects.add_child(obj_sprite)
+	mutex.unlock()
 
 func render_object(thread_index: int) -> void:
 	var sobj_index: int = thread_ids[thread_index]

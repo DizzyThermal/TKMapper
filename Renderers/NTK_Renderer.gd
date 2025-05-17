@@ -69,10 +69,14 @@ func render_frame(
 		return self.images[image_key]
 
 	var frame := get_frame(frame_index)
+	if frame.width == 0 or frame.height == 0:
+		return null
 	var pixel_data := create_pixel_data(frame_index, palette_index, animated_color_offset, initial_color_offset)
 	var frame_image := Image.create_from_data(frame.width, frame.height, false, Image.FORMAT_RGBA8, pixel_data)
-	if frame.mask_image:
-		var image := Image.create(frame.width, frame.height, false, Image.FORMAT_RGBA8)
+	if frame.mask_image != null \
+			and frame.mask_image.get_width() > 0 \
+			and frame.mask_image.get_height() > 0:
+		var image := Image.create_empty(frame.width, frame.height, false, Image.FORMAT_RGBA8)
 		var mask_rect := Rect2i(0, 0, frame.mask_image.get_width(), frame.mask_image.get_height())
 		image.blit_rect_mask(frame_image, frame.mask_image, mask_rect, Vector2i(0, 0))
 		mutex.lock()
@@ -105,7 +109,10 @@ func render_animated_frame(
 		palette_index: int=0,
 		color_offset: int=0) -> Image:
 	var frame := get_frame(frame_index)
-	var animated_spritesheet := Image.create(frame.width * animation_count, frame.height, false, Image.FORMAT_RGBA8)
+	if frame.width == 0:
+		print("D")
+	var animated_spritesheet := Image.create_empty(
+		frame.width * animation_count, frame.height, false, Image.FORMAT_RGBA8)
 	for i in range(animation_count):
 		animated_spritesheet.blit_rect(
 			render_frame(frame_index, palette_index, -i),
@@ -125,8 +132,10 @@ func create_animation_spritesheet(
 		animation_images.append(render_frame(frame_index, palette_index))
 
 	var pivot := Pivot.get_pivot(frames)
-
-	var sprite_sheet := Image.create(pivot.width * len(animation_images), pivot.height, false, Image.FORMAT_RGBA8)
+	if pivot.width == 0:
+		print("A")
+	var sprite_sheet := Image.create_empty(
+		pivot.width * len(animation_images), pivot.height, false, Image.FORMAT_RGBA8)
 	for offset in range(len(animation_images)):
 		var image: Image = animation_images[offset]
 		var frame: NTK_Frame = frames[offset]

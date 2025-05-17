@@ -94,7 +94,9 @@ func get_frame(
 				mask_byte_array.encode_u32(byte_offset, Color.TRANSPARENT.to_abgr32())
 				byte_offset += 4
 
-	var mask_image := Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, mask_byte_array)
+	var mask_image: Image
+	if width > 0 and height > 0:
+		mask_image = Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, mask_byte_array)
 
 	var frame := NTK_Frame.new(left, top, right, bottom, width, height, raw_pixel_data, mask_image)
 	mutex.lock()
@@ -113,7 +115,7 @@ func get_frame(
 		print("DEBUG:     Dimensions (WxH):  ", frame.width, " x ", frame.height)
 		if Debug.debug_show_pixel_data:
 			print("DEBUG:     Raw Pixel Bytes: ", frame.raw_pixel_data.to_int32_array())
-		if Debug.debug_show_pixel_mask_data and frame.mask_image:
+		if Debug.debug_show_pixel_mask_data and frame.mask_image != null:
 			print("DEBUG:     Mask Image Bytes:", frame.mask_image.get_data())
 
 	if frame_index not in self.frames:

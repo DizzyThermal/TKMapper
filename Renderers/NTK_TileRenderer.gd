@@ -54,7 +54,8 @@ func create_ntk_tileset(
 		ntk_tileset.tile_set_width = len(ntk_tileset.tile_atlas_position_by_tile_index)
 
 	var tile_set_image_size = Vector2i(ntk_tileset.tile_set_width * Resources.tile_size, ntk_tileset.tile_atlas_position.y * Resources.tile_size)
-	var tile_set_image = Image.create(tile_set_image_size.x, tile_set_image_size.y, false, Image.FORMAT_RGBA8)
+	var tile_set_image = Image.create_empty(
+		tile_set_image_size.x, tile_set_image_size.y, false, Image.FORMAT_RGBA8)
 	for tile_index in ntk_tileset.tile_atlas_position_by_tile_index:
 		var palette_index := tbl.palette_indices[tile_index]
 		var image_key := str(tile_index) + "-" + str(palette_index) + "-" + str(0)
@@ -62,7 +63,9 @@ func create_ntk_tileset(
 		tile_set_image.blit_rect(images[image_key], Resources.tile_rect, tile_position * Resources.tile_size)
 
 	var tile_set_atlas_source := TileSetAtlasSource.new()
-	tile_set_atlas_source.texture = ImageTexture.create_from_image(tile_set_image)
+	if tile_set_image.get_width() > 0 \
+			and tile_set_image.get_height() > 0:
+		tile_set_atlas_source.texture = ImageTexture.create_from_image(tile_set_image)
 	tile_set_atlas_source.texture_region_size = Resources.tile_size_vector
 	for tile_index in ntk_tileset.tile_atlas_position_by_tile_index:
 		var tile_position = ntk_tileset.tile_atlas_position_by_tile_index[tile_index]

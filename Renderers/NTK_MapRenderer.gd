@@ -117,14 +117,17 @@ func create_tile_set_source() -> TileSetAtlasSource:
 	
 	var num_of_tiles = len(ntk_tileset_source.tile_atlas_position_by_tile_index)
 	var tile_set_image_size = Vector2i((ntk_tileset_source.tile_set_width + 1) * Resources.tile_size, (ntk_tileset_source.tile_atlas_position.y + 1) * Resources.tile_size)
-	var tile_set_image = Image.create(tile_set_image_size.x, tile_set_image_size.y, false, Image.FORMAT_RGBA8)
+	var tile_set_image = Image.create_empty(
+		tile_set_image_size.x, tile_set_image_size.y, false, Image.FORMAT_RGBA8)
 	for tile_index in ntk_tileset_source.tile_atlas_position_by_tile_index:
 		var tile_position = ntk_tileset_source.tile_atlas_position_by_tile_index[tile_index]
 		var palette_index = tile_renderer.tbl.palette_indices[tile_index]
 		tile_set_image.blit_rect(tile_renderer.render_frame(tile_index, palette_index), Resources.tile_rect, tile_position * Resources.tile_size)
 
 	var tile_set_source := TileSetAtlasSource.new()
-	tile_set_source.texture = ImageTexture.create_from_image(tile_set_image)
+	if tile_set_image.get_width() > 0 \
+			and tile_set_image.get_height() > 0:
+		tile_set_source.texture = ImageTexture.create_from_image(tile_set_image)
 	tile_set_source.texture_region_size = Resources.tile_size_vector
 	for tile_index in ntk_tileset_source.tile_atlas_position_by_tile_index:
 		var tile_position = ntk_tileset_source.tile_atlas_position_by_tile_index[tile_index]
@@ -147,22 +150,26 @@ func add_tile_to_tile_set_source(
 				palette.animation_indices,
 				frame.raw_pixel_data_array):
 		var animation_count := len(palette.animation_indices) / len(palette.animation_ranges)
-		tile_set_source.texture = ImageTexture.create_from_image(
-			tile_renderer.render_animated_frame(tile_index,
-				animation_count,
-				palette_index))
+		var tile_image: Image = tile_renderer.render_animated_frame(
+			tile_index, animation_count, palette_index)
+		if tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			tile_set_source.texture = ImageTexture.create_from_image(tile_image)
 		tile_set_source.create_tile(Vector2i(0, 0))
 		tile_set_source.set_tile_animation_columns(Vector2i(0, 0), animation_count)
 		tile_set_source.set_tile_animation_frames_count(Vector2i(0, 0), animation_count)
 		for j in range(animation_count):
 			tile_set_source.set_tile_animation_frame_duration(Vector2i(0, 0), j, 0.5)
 	else:
-		tile_set_source.texture = ImageTexture.create_from_image(
-			tile_renderer.render_frame(
+		var tile_image: Image = tile_renderer.render_frame(
 				tile_index,
 				palette_index,
 				0, 0,
-				false))
+				false)
+		if tile_image != null \
+				and tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			tile_set_source.texture = ImageTexture.create_from_image(tile_image)
 		tile_set_source.create_tile(Vector2i(0, 0))
 	if not parent.tile_map.tile_set.has_source(tile_index):
 		parent.tile_map.tile_set.add_source(tile_set_source, tile_index)
@@ -179,21 +186,25 @@ func prerender_tile(thread_index: int) -> void:
 				palette.animation_indices,
 				frame.raw_pixel_data_array):
 		var animation_count := len(palette.animation_indices) / len(palette.animation_ranges)
-		tile_set_source.texture = ImageTexture.create_from_image(
-			tile_renderer.render_animated_frame(tile_index,
+		var tile_image: Image = tile_renderer.render_animated_frame(tile_index,
 				animation_count,
-				palette_index))
+				palette_index)
+		if tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			tile_set_source.texture = ImageTexture.create_from_image(tile_image)
 		tile_set_source.create_tile(Vector2i(0, 0))
 		tile_set_source.set_tile_animation_columns(Vector2i(0, 0), animation_count)
 		tile_set_source.set_tile_animation_frames_count(Vector2i(0, 0), animation_count)
 		for j in range(animation_count):
 			tile_set_source.set_tile_animation_frame_duration(Vector2i(0, 0), j, 0.5)
 	else:
-		tile_set_source.texture = ImageTexture.create_from_image(
-			tile_renderer.render_frame(
+		var tile_image: Image = tile_renderer.render_frame(
 				tile_index,
 				palette_index,
-				false))
+				false)
+		if tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			tile_set_source.texture = ImageTexture.create_from_image(tile_image)
 		tile_set_source.create_tile(Vector2i(0, 0))
 	if not self.tile_set.has_source(tile_index):
 		mutex.lock()
@@ -232,7 +243,8 @@ func create_tilemap(parent: Node2D, map_path: String, x: int, y: int, width: int
 	var debug_image: Image = null
 	var map_name: String = get_map_name(map_path)
 	if Debug.debug_map_tilemap:
-		debug_image = Image.create(width * Resources.tile_size, height * Resources.tile_size, false,Image.FORMAT_RGBA8)
+		debug_image = Image.create_empty(
+			width * Resources.tile_size, height * Resources.tile_size, false,Image.FORMAT_RGBA8)
 	for i in range(start_i, end_i):
 		var tile_position := Vector2i((i % cmp.width), (i / cmp.width))
 		if not map_area.has_point(tile_position):

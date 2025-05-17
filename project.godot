@@ -24,6 +24,10 @@ MapperState="*res://Resources/MapperState.gd"
 Resources="*res://Resources/Resources.gd"
 Debug="*res://Resources/Debug.gd"
 
+[debug]
+
+file_logging/enable_file_logging=true
+
 [display]
 
 window/size/viewport_width=1440

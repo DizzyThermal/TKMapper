@@ -110,7 +110,10 @@ func initialize() -> void:
 	# Create Cursor Tile
 	var tile_index: int = map_tiles[0][0]["ab_index"]
 	var palette_index := map_renderer.tile_renderer.tbl.palette_indices[tile_index]
-	cursor_tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(tile_index, palette_index), )
+	var tile_image: Image = map_renderer.tile_renderer.render_frame(tile_index, palette_index)
+	if tile_image.get_width() > 0 \
+			and tile_image.get_height() > 0:
+		cursor_tile.texture = ImageTexture.create_from_image(tile_image)
 	cursor_tile.z_index = 2
 	cursor_tile.centered = false
 	add_child(cursor_tile)
@@ -444,7 +447,8 @@ func _process(delta):
 			start_copy_position.y / Resources.tile_size,
 		)
 		map_copy_tiles.clear()
-		var copy_image := Image.create(target_box_size.x, target_box_size.y, false, Image.FORMAT_RGBA8)
+		var copy_image := Image.create_empty(
+			target_box_size.x, target_box_size.y, false, Image.FORMAT_RGBA8)
 		for y in range(copy_dims.y):
 			map_copy_tiles.append([])
 			for x in range(copy_dims.x):
@@ -459,13 +463,25 @@ func _process(delta):
 				var palette_index := map_renderer.tile_renderer.tbl.palette_indices[ab_index]
 				var frame := map_renderer.tile_renderer.get_frame(ab_index)
 				var frame_rect := Rect2i(0, 0, frame.width, frame.height)
-				copy_image.blit_rect_mask(
-					map_renderer.tile_renderer.render_frame(ab_index, palette_index),
-					frame.mask_image,
-					frame_rect,
-					Vector2i(x * Resources.tile_size, y * Resources.tile_size)
-				)
-		cursor_tile.texture = ImageTexture.create_from_image(copy_image)
+				var tile_image := map_renderer.tile_renderer.render_frame(ab_index, palette_index)
+				if frame.mask_image != null \
+						and frame.mask_image.get_width() > 0 \
+						and frame.mask_image.get_height() > 0:
+					copy_image.blit_rect_mask(
+						map_renderer.tile_renderer.render_frame(ab_index, palette_index),
+						frame.mask_image,
+						frame_rect,
+						Vector2i(x * Resources.tile_size, y * Resources.tile_size)
+					)
+				else:
+					copy_image.blit_rect(
+						map_renderer.tile_renderer.render_frame(ab_index, palette_index),
+						frame_rect,
+						Vector2i(x * Resources.tile_size, y * Resources.tile_size)
+					)
+		if copy_image.get_width() > 0 \
+				and copy_image.get_height() > 0:
+			cursor_tile.texture = ImageTexture.create_from_image(copy_image)
 
 		start_copy_position = Vector2i(-1, -1)
 	
@@ -946,7 +962,10 @@ func update_cursor_preview(index: int) -> void:
 		if mode == MapMode.TILE:
 			current_tile_index = index
 			var palette_index := map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
-			cursor_tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(current_tile_index, palette_index))
+			var tile_image: Image = map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
+			if tile_image.get_width() > 0 \
+					and tile_image.get_height() > 0:
+				cursor_tile.texture = ImageTexture.create_from_image(tile_image)
 		elif mode == MapMode.OBJECT:
 			current_object_index = index
 			cursor_tile.texture = map_renderer.sobj_renderer.render_object(current_object_index)
@@ -988,7 +1007,11 @@ func load_tileset(start_tile: int=0) -> void:
 		var tile := TextureRect.new()
 		tile.custom_minimum_size = Resources.tile_size_vector
 		var palette_index := map_renderer.tile_renderer.tbl.palette_indices[i]
-		tile.texture = ImageTexture.create_from_image(map_renderer.tile_renderer.render_frame(i, palette_index))
+		var tile_image: Image = map_renderer.tile_renderer.render_frame(i, palette_index)
+		if tile_image != null \
+				and tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			tile.texture = ImageTexture.create_from_image(tile_image)
 		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
 		tile_set_container.add_child(tile)
 	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))

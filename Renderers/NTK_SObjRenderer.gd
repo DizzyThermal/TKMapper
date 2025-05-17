@@ -32,7 +32,8 @@ func prune_cache(images_to_remove: int) -> void:
 func render_object(object_index: int) -> ImageTexture:
 	var object: SObj = sobj.objects[object_index]
 	var actual_height = object.height
-	var object_image := Image.create(Resources.tile_size, Resources.tile_size * actual_height, false, Image.FORMAT_RGBA8)
+	var object_image := Image.create_empty(
+		Resources.tile_size, Resources.tile_size * actual_height, false, Image.FORMAT_RGBA8)
 	if object_index not in object_images:
 		for i in range(object.height):
 			var tile_index := object.tile_indices[i]
@@ -40,16 +41,25 @@ func render_object(object_index: int) -> ImageTexture:
 			var image_key := str(tile_index) + "-" + str(palette_index)
 			var frame := tilec_renderer.get_frame(object.tile_indices[i])
 			var frame_rect := Rect2i(0, 0, frame.width, frame.height)
-			object_image.blit_rect_mask(
-				tilec_renderer.render_frame(object.tile_indices[i], palette_index), 
-				frame.mask_image,
-				frame_rect,
-				Vector2i(frame.left, (actual_height - i - 1) * Resources.tile_size + frame.top))
+			var object_piece := tilec_renderer.render_frame(object.tile_indices[i], palette_index)
+			if object_piece != null \
+					and object_piece.get_width() > 0 \
+					and object_piece.get_height() > 0:
+				if frame.mask_image != null \
+						and frame.mask_image.get_width() > 0 \
+						and frame.mask_image.get_height() > 0:
+					object_image.blit_rect_mask(
+						object_piece,
+						frame.mask_image,
+						frame_rect,
+						Vector2i(frame.left, (actual_height - i - 1) * Resources.tile_size + frame.top))
+				else:
+					object_image.blit_rect(
+						object_piece,
+						frame_rect,
+						Vector2i(frame.left, (actual_height - i - 1) * Resources.tile_size + frame.top))
 			mutex.lock()
 			object_images[object_index] = object_image
 			mutex.unlock()
 
-	if object_index in object_images:
-		return ImageTexture.create_from_image(object_images[object_index])
-	else:
-		return ImageTexture.create_from_image(object_image)
+	return ImageTexture.create_from_image(object_images[object_index])

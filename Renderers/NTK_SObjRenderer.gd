@@ -62,4 +62,7 @@ func render_object(object_index: int) -> ImageTexture:
 			object_images[object_index] = object_image
 			mutex.unlock()
 
-	return ImageTexture.create_from_image(object_images[object_index])
+	if object_index in object_images:
+		return ImageTexture.create_from_image(object_images[object_index])
+	else:
+		return ImageTexture.create_from_image(object_image)

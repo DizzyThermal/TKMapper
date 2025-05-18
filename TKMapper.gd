@@ -996,11 +996,11 @@ func load_tileset(start_tile: int=0) -> void:
 	# Collect Unique Tiles
 	thread_ids.clear()
 	thread_ids.append_array(range(max(1, start_tile), end_tile))
-	
+
 	# Threaded Tile Renderering
 	var task_id : int = WorkerThreadPool.add_group_task(render_tile, thread_ids.size(), -1, true)
 	WorkerThreadPool.wait_for_group_task_completion(task_id)
-	
+
 	# Load Tile Selection Area
 	clear_container(tile_set_container)
 	for i in range(start_tile, end_tile):

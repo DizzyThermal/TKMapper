@@ -20,8 +20,9 @@ config/icon="res://icon.png"
 [autoload]
 
 Database="*res://Resources/Database.gd"
-MapperState="*res://Resources/MapperState.gd"
 Resources="*res://Resources/Resources.gd"
+MapperState="*res://Resources/MapperState.gd"
+Renderers="*res://Resources/Renderers.gd"
 Debug="*res://Resources/Debug.gd"
 
 [debug]

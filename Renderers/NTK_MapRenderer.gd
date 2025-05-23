@@ -10,7 +10,6 @@ var sobj_renderer: NTK_SObjRenderer = null
 
 var cmp: CmpFileHandler = null
 var tile_set: TileSet
-var objects := {}
 var ntk_tileset_source := NTK_TileSetSource.new()
 var thread_ids: Array[int] = []
 
@@ -276,30 +275,15 @@ func create_tilemap(parent: Node2D, map_path: String, x: int, y: int, width: int
 	if Debug.debug_map_tilemap:
 		Debug.save_to_desktop(debug_image, "Map-" + map_name + ".png")
 
-func clear_objects(objects: Node2D):
-	for object in objects.get_children():
-		objects.remove_child(object)
-		object.queue_free()
-
 func create_object(parent: Node2D, sobj_index: int, location: Vector2i) -> void:
-	if sobj_index not in objects:
-		mutex.lock()
-		objects[sobj_index] = sobj_renderer.render_object(sobj_index)
-		mutex.unlock()
-	
 	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
 	var sobj_height := sobj.height
 
-	var obj_sprite := Sprite2D.new()
-	var obj_image: ImageTexture = objects[sobj_index]
-	obj_sprite.texture = obj_image
-	obj_sprite.centered = false
+	var obj_sprite := SObjSprite.new(sobj_index)
+
 	obj_sprite.position.x = location.x * Resources.tile_size
 	obj_sprite.offset.y = -(sobj_height) * Resources.tile_size
 	obj_sprite.position.y = ((location.y - sobj_height + 1) * Resources.tile_size) - obj_sprite.offset.y
-	obj_sprite.y_sort_enabled = true
-	obj_sprite.z_index = 1
-	obj_sprite.z_as_relative = false
 
 	mutex.lock()
 	parent.objects.add_child(obj_sprite)
@@ -335,7 +319,7 @@ func create_objects(parent: Node2D, map_path: String, x: int, y: int, width: int
 	var task_id : int = WorkerThreadPool.add_group_task(render_object, thread_ids.size(), -1, true)
 	WorkerThreadPool.wait_for_group_task_completion(task_id)
 
-	clear_objects(parent.objects)
+	parent.clear_objects()
 	for i in range(start_i, end_i):
 		var tile_position := Vector2i((i % cmp.width), (i / cmp.width))
 		if not map_area.has_point(tile_position):

@@ -29,19 +29,29 @@ func prune_cache(images_to_remove: int) -> void:
 		object_images.erase(image_key)
 	mutex.unlock()
 
-func render_object(object_index: int) -> ImageTexture:
+func render_object(
+		object_index: int,
+		animated_color_offset: int=0,
+		initial_color_offset: int=0) -> ImageTexture:
 	var object: SObj = sobj.objects[object_index]
 	var actual_height = object.height
 	var object_image := Image.create_empty(
 		Resources.tile_size, Resources.tile_size * actual_height, false, Image.FORMAT_RGBA8)
-	if object_index not in object_images:
+	var object_key := str(object_index) \
+		+ "-" + str(animated_color_offset) \
+		+ "-" + str(initial_color_offset)
+	if object_key not in object_images:
 		for i in range(object.height):
 			var tile_index := object.tile_indices[i]
 			var palette_index := tilec_renderer.tbl.palette_indices[tile_index]
-			var image_key := str(tile_index) + "-" + str(palette_index)
 			var frame := tilec_renderer.get_frame(object.tile_indices[i])
 			var frame_rect := Rect2i(0, 0, frame.width, frame.height)
-			var object_piece := tilec_renderer.render_frame(object.tile_indices[i], palette_index)
+			var object_piece := tilec_renderer.render_frame(
+				object.tile_indices[i],
+				palette_index,
+				animated_color_offset,
+				initial_color_offset,
+			)
 			if object_piece != null \
 					and object_piece.get_width() > 0 \
 					and object_piece.get_height() > 0:
@@ -59,10 +69,10 @@ func render_object(object_index: int) -> ImageTexture:
 						frame_rect,
 						Vector2i(frame.left, (actual_height - i - 1) * Resources.tile_size + frame.top))
 			mutex.lock()
-			object_images[object_index] = object_image
+			object_images[object_key] = object_image
 			mutex.unlock()
 
-	if object_index in object_images:
-		return ImageTexture.create_from_image(object_images[object_index])
+	if object_key in object_images:
+		return ImageTexture.create_from_image(object_images[object_key])
 	else:
 		return ImageTexture.create_from_image(object_image)

@@ -205,10 +205,10 @@ func prerender_tile(thread_index: int) -> void:
 				and tile_image.get_height() > 0:
 			tile_set_source.texture = ImageTexture.create_from_image(tile_image)
 		tile_set_source.create_tile(Vector2i(0, 0))
+	mutex.lock()
 	if not self.tile_set.has_source(tile_index):
-		mutex.lock()
-		self.tile_set.add_source.call_deferred(tile_set_source, tile_index)
-		mutex.unlock()
+		self.tile_set.add_source(tile_set_source, tile_index)
+	mutex.unlock()
 
 func create_tile_set() -> void:
 	tile_set = TileSet.new()

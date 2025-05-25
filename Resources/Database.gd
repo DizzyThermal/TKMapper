@@ -19,6 +19,8 @@ var database_initialized: bool = false
 var db: SQLite
 const db_path := "res://config.db"
 
+var mutex: Mutex = Mutex.new()
+
 func _ready() -> void:
 	db = SQLite.new()
 	db.path = db_path
@@ -26,6 +28,7 @@ func _ready() -> void:
 
 	# Check Database Tables (Initialize if any tables are missing)
 	if not table_exists("config"):
+		mutex.lock()
 		db.create_table("config", {
 			"id": {
 				"data_type":"integer",
@@ -35,6 +38,7 @@ func _ready() -> void:
 			"config_key":	{"data_type":"text"},
 			"config_value": {"data_type":"text"},
 		})
+		mutex.unlock()
 
 	# Check Config Entries (Initialize if any config entries are missing)
 	if not config_key_exists("data_dir"):
@@ -58,8 +62,12 @@ func _ready() -> void:
 	database_initialized = true
 
 func table_exists(table_name: String) -> bool:
+	var table_exists: bool = false
+	mutex.lock()
 	db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='" + table_name + "';")
-	return len(db.query_result) > 0
+	table_exists = len(db.query_result) > 0
+	mutex.unlock()
+	return table_exists
 
 func get_config_item_value(config_key: String) -> String:
 	var config_value: String = ""
@@ -68,8 +76,12 @@ func get_config_item_value(config_key: String) -> String:
 	return config_value
 
 func get_config_item(config_key: String) -> Array[Dictionary]:
+	var config_item: Array[Dictionary] = []
+	mutex.lock()
 	db.select_rows("config", "config_key == '%s'" % config_key, ["*"])
-	return db.query_result
+	config_item = db.query_result
+	mutex.unlock()
+	return config_item
 
 func config_key_exists(config_key: String) -> bool:
 	return len(get_config_item(config_key)) > 0
@@ -78,10 +90,14 @@ func config_key_exists(config_key: String) -> bool:
 func upsert_config_item(
 		config_key: String,
 		config_value: String) -> bool:
+	var upsert_result: bool = false
+	mutex.lock()
 	if config_key_exists(config_key):
-		return db.update_rows("config", "config_key == '%s'" % config_key, {"config_value": config_value})
+		upsert_result = db.update_rows("config", "config_key == '%s'" % config_key, {"config_value": config_value})
 	else:
-		return db.insert_row("config", {
+		upsert_result = db.insert_row("config", {
 			"config_key": config_key,
 			"config_value": config_value,
 		})
+	mutex.unlock()
+	return upsert_result

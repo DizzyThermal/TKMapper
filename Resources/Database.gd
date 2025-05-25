@@ -21,7 +21,7 @@ const db_path := "res://config.db"
 
 var mutex: Mutex = Mutex.new()
 
-func _ready() -> void:
+func _init() -> void:
 	db = SQLite.new()
 	db.path = db_path
 	db.open_db()

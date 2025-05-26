@@ -106,9 +106,9 @@ func initialize() -> void:
 	load_map(Database.get_config_item_value("last_map_path"))
 
 	# Create Cursor Tile
-	var tile_index: int = map_tiles[0][0]["ab_index"]
-	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[tile_index]
-	var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(tile_index, palette_index)
+	current_tile_index = map_tiles[0][0]["ab_index"]
+	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
+	var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
 	if tile_image.get_width() > 0 \
 			and tile_image.get_height() > 0:
 		cursor_tile.texture = ImageTexture.create_from_image(tile_image)
@@ -121,8 +121,9 @@ func initialize() -> void:
 	max_tile_count = Renderers.map_renderer.tile_renderer.tbl.tile_count
 	max_object_count = Renderers.map_renderer.sobj_renderer.sobj.object_count
 	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
+	current_tile_page = current_tile_index / int(tile_page_size_spinbox.value)
 	page_info_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
-	change_to_tile_mode()
+	change_to_tile_mode(current_tile_index)
 
 	# Connect Signals
 	## Viewport
@@ -306,16 +307,18 @@ func _process(delta):
 	# Mode Switches
 	if Input.is_action_just_pressed("toggle-mode") and \
 			not MapperState.menu_open:
-		change_map_mode()			# M
+		change_map_mode()							# M
 	elif Input.is_action_just_pressed("mode-tile") and \
 			not MapperState.menu_open:
-		change_to_tile_mode()		# T
+		var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
+		change_to_tile_mode(tile_index)				# T
 	elif Input.is_action_just_pressed("mode-object") and \
 			not MapperState.menu_open:
-		change_to_object_mode()		# O
+		var object_index: int = current_object_page * int(object_page_size_spinbox.value)
+		change_to_object_mode(object_index)			# O
 	elif Input.is_action_just_pressed("mode-unpassable") and \
 			not MapperState.menu_open:
-		change_to_unpassable_mode()	# P
+		change_to_unpassable_mode()					# P
 
 	# Toggle Objects
 	if Input.is_action_just_pressed("toggle-objects") \
@@ -423,7 +426,7 @@ func _process(delta):
 				and MapperState.pasting_multiple \
 				and not MapperState.copying_multiple:
 			start_paste_position = snapped_mouse_position
-		cursor_tile.visible = true
+		cursor_tile.visible = false
 		target_box.visible = true
 		cursor_state = "Select"
 	else:
@@ -729,7 +732,6 @@ func load_map(map_path: String) -> void:
 	
 	camera.position = Vector2(-1000, 400)
 	title_label.text = map_path.split("/")[-1].replace(".cmp", "")
-	change_to_tile_mode()
 
 func shift_map(direction: Resources.Direction) -> void:
 	var previous_tile_index: int = current_tile_index
@@ -856,6 +858,9 @@ func shift_map(direction: Resources.Direction) -> void:
 	MapperState.shifting = false
 
 func insert_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) -> void:
+	if current_tile_index < 0:
+		return
+
 	if current_tile_index not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
 		Renderers.map_renderer.add_tile_to_tile_set_source(self, coodinate, current_tile_index)
 
@@ -886,6 +891,9 @@ func erase_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) -> void:
 	map_tiles[coodinate.y][coodinate.x]["ab_index"] = -1
 
 func insert_object(coodinate: Vector2i, add_to_undo_stack: bool=true) -> void:
+	if current_object_index < 0:
+		return
+
 	var previous_object_index = map_tiles[coodinate.y][coodinate.x]["sobj_index"]
 	if previous_object_index != current_object_index and add_to_undo_stack:
 		undo_stack.insert(0, {
@@ -1149,11 +1157,13 @@ func _on_file_dialog_canceled():
 func change_map_mode() -> void:
 	# Cycle Modes (Icon is the NEXT mode, does that make sense?)
 	if mode == MapMode.TILE:
-		change_to_object_mode()
+		var object_index: int = current_object_page * int(object_page_size_spinbox.value)
+		change_to_object_mode(object_index)
 	elif mode == MapMode.OBJECT:
 		change_to_unpassable_mode()
 	elif mode == MapMode.UNPASSABLE:
-		change_to_tile_mode()
+		var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
+		change_to_tile_mode(tile_index)
 
 func _on_mode_pressed():
 	change_map_mode()
@@ -1262,7 +1272,7 @@ func _on_settings_pressed():
 	else:
 		MapperState.menu_open = true
 
-func change_to_tile_mode() -> void:
+func change_to_tile_mode(start_tile: int=0) -> void:
 	_toggle_selection_area(true, false)
 	mode = MapMode.TILE
 	tile_mode_button.texture_normal = load("res://Images/contrast-bright.svg")
@@ -1272,14 +1282,15 @@ func change_to_tile_mode() -> void:
 	next_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
-	load_tileset()
+	load_tileset(start_tile)
 	update_cursor_preview(current_tile_index)
 	_toggle_selection_area(true, true)
 
 func _on_tile_mode_pressed():
-	change_to_tile_mode()
+	var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
+	change_to_tile_mode(tile_index)
 
-func change_to_object_mode() -> void:
+func change_to_object_mode(start_object: int=0) -> void:
 	_toggle_selection_area(true, false)
 	mode = MapMode.OBJECT
 	tile_mode_button.texture_normal = load("res://Images/contrast-dark.svg")
@@ -1289,12 +1300,13 @@ func change_to_object_mode() -> void:
 	next_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
-	load_objectset()
+	load_objectset(start_object)
 	update_cursor_preview(current_object_index)
 	_toggle_selection_area(true, true)
 
 func _on_object_mode_pressed():
-	change_to_object_mode()
+	var object_index: int = current_object_page * int(object_page_size_spinbox.value)
+	change_to_object_mode(object_index)
 
 func change_to_unpassable_mode() -> void:
 	_toggle_selection_area(true, false)

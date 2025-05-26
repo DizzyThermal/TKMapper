@@ -1387,11 +1387,19 @@ func  _goto_page(page_number: int):
 			load_objectset(current_object_page * int(object_page_size_spinbox.value))
 
 func _on_go_to_page_pressed():
+	if mode == MapMode.UNPASSABLE:
+		return
+
 	goto_page.visible = not goto_page.visible
 	if not goto_page.visible:
 		set_menu_closed()
 	else:
 		MapperState.menu_open = true
+		var current_page: int = current_tile_page + 1
+		if mode == MapMode.OBJECT:
+			current_page = current_object_page + 1
+		goto_page.page_spin_box.get_line_edit().grab_focus()
+		goto_page.page_spin_box.value = current_page
 
 func _on_hide_panel_pressed():
 	_toggle_selection_area()

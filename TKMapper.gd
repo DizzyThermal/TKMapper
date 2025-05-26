@@ -1052,7 +1052,7 @@ func load_objectset(start_object: int=0) -> void:
 	# Load Object Selection Area
 	clear_container(object_set_container)
 	for i in range(start_object, end_object - 1):
-		var object_texture := TextureRect.new()
+		var object_texture := SObjTextureRect.new(i)
 		var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[i]
 		object_texture.texture = Renderers.map_renderer.sobj_renderer.render_object(i)
 		object_texture.connect("mouse_entered", func(): self.hover_object_index = i)

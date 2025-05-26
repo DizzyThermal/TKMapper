@@ -9,6 +9,10 @@ extends Panel
 
 var parent: Node2D
 
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("escape"):
+		_on_close_button_pressed()
+
 func set_parent(new_parent: Node2D) -> void:
 	self.parent = new_parent
 

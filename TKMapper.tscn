@@ -247,7 +247,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -527.0
+offset_top = -606.0
 offset_bottom = -36.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -259,7 +259,7 @@ anchors_preset = -1
 anchor_top = 1.073
 anchor_right = 1.0
 anchor_bottom = 1.073
-offset_top = -526.843
+offset_top = -605.843
 offset_bottom = -35.843
 vertical_scroll_mode = 0
 

@@ -10,6 +10,7 @@ var cursor_inner_rect := Rect2(Vector2i(0.1, 0.1), Vector2i(0.8, 0.8))
 var map_regex: RegEx = RegEx.new()
 var start_copy_position: Vector2i = Vector2i(-1, -1)
 var start_paste_position: Vector2i = Vector2i(-1, -1)
+var start_selection_position: int = -1
 var target_box_size: Vector2i = Vector2i(48, 48)
 
 var max_tile_count := 0
@@ -503,18 +504,12 @@ func _process(delta):
 			not MapperState.menu_open and \
 			not MapperState.copying_multiple and \
 			coordinate_on_map(mouse_coordinate):
-		#if mode == MapMode.TILE:
-			#insert_tile(mouse_coordinate)
-		#elif mode == MapMode.OBJECT:
-			#insert_object(mouse_coordinate)
-		#elif mode == MapMode.UNPASSABLE:
-			#insert_unpassable_tile(mouse_coordinate)
 		paste_cursor_preview(mouse_coordinate)
 		
-		if mouse_coordinate.x + 1 > MapperState.map_size.x:
-			MapperState.map_size.x = mouse_coordinate.x + 1
-		if mouse_coordinate.y + 1 > MapperState.map_size.y:
-			MapperState.map_size.y = mouse_coordinate.y + 1
+		if mouse_coordinate.x + len(map_copy_tiles[0]) > MapperState.map_size.x:
+			MapperState.map_size.x = mouse_coordinate.x + len(map_copy_tiles[0])
+		if mouse_coordinate.y + len(map_copy_tiles) > MapperState.map_size.y:
+			MapperState.map_size.y = mouse_coordinate.y + len(map_copy_tiles)
 		map_bounds_box.size = Vector2i(MapperState.map_size.x, MapperState.map_size.y) * Resources.tile_size
 
 	# Erase Tile on Left Mouse Button (LMB) - Eraser Mode
@@ -619,14 +614,17 @@ func _process(delta):
 		elif mode == MapMode.OBJECT:
 			status_label.text = "Object Index: " + str(self.hover_object_index)
 
-func _input(event):
-	if event is InputEventMouseButton:
-		if MapperState.over_selection_area and \
-				not MapperState.menu_open:
-			if mode == MapMode.TILE:
-				update_cursor_preview(self.hover_tile_index)
-			elif mode == MapMode.OBJECT:
-				update_cursor_preview(self.hover_object_index)
+#func _input(event):
+	#if event is InputEventMouseButton:
+		#if MapperState.over_selection_area and \
+				#not MapperState.menu_open and \
+				#start_selection_position == -1:
+			#if mode == MapMode.TILE:
+				#start_selection_position = self.hover_tile_index
+				#update_cursor_preview(self.hover_tile_index)
+			#elif mode == MapMode.OBJECT:
+				#start_selection_position = self.hover_object_index
+				#update_cursor_preview(self.hover_object_index)
 
 func update_tool_tip(
 		tool_tip_text: String,

@@ -94,6 +94,13 @@ z_index = 2
 [node name="Unpassables" type="Node2D" parent="."]
 z_index = 3
 
+[node name="CursorPreview" type="Node2D" parent="."]
+
+[node name="TileMap" type="TileMap" parent="CursorPreview"]
+format = 2
+
+[node name="Objects" type="Node2D" parent="CursorPreview"]
+
 [node name="TargetBox" type="Panel" parent="."]
 z_index = 3
 offset_left = -24.0

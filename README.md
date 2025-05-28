@@ -49,8 +49,7 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 
 * ` Scroll Wheel `: Zoom Map
 * ` CTRL + Left Mouse Button `: Drag/move map
-* ` ALT + Left Mouse Button `: Copy Multiple Tiles/Objects (Click + Drag to Select)
-* ` ALT + Right Mouse Button `: Pastes Multiple Tiles/Objects
+* ` ALT + Right Mouse Button `: Copy Multiple Tiles/Objects (Click + Drag to Select)
 
 #### Mode Specific Mouse Shortcuts
 

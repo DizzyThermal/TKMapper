@@ -47,6 +47,10 @@ var thread_ids: Array[int] = []
 @onready var tile_map := $TileMap
 @onready var objects := $Objects
 @onready var unpassables := $Unpassables
+@onready var cursor_preview := $CursorPreview
+@onready var cursor_tile_map := $CursorPreview/TileMap
+@onready var cursor_objects := $CursorPreview/Objects
+@onready var cursor_unpassables := $CursorPreview/Unpassables
 @onready var target_box: Panel = $TargetBox
 @onready var map_limits_box: Panel = $MapLimitsBox
 @onready var map_bounds_box: Panel = $MapBoundsBox
@@ -106,15 +110,24 @@ func initialize() -> void:
 	load_map(Database.get_config_item_value("last_map_path"))
 
 	# Create Cursor Tile
+	cursor_tile_map.tile_set = tile_map.tile_set
 	current_tile_index = map_tiles[0][0]["ab_index"]
 	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
 	var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
 	if tile_image.get_width() > 0 \
 			and tile_image.get_height() > 0:
-		cursor_tile.texture = ImageTexture.create_from_image(tile_image)
+		cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
+		map_copy_tiles.append([])
+		map_copy_tiles[0].append({
+			"ab_index": current_tile_index,
+			"sobj_index": -1,
+			"unpassable": false,
+		})
+		
 	cursor_tile.z_index = 2
 	cursor_tile.centered = false
 	add_child(cursor_tile)
+	add_child(cursor_tile_map)
 	set_target_box_color(Color.GREEN)
 
 	# TileSet
@@ -391,13 +404,8 @@ func _process(delta):
 	var snapped_mouse_position := (Vector2i(get_global_mouse_position()) - (Resources.tile_size_vector / 2)).snapped(Resources.tile_size_vector)
 	var grabbing_map := false
 	
-	# ALT + LMB (Left Mouse Button)
-	MapperState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
-		and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) \
-		and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
-		and mouse_over_tile_map()
 	# ALT + RMB (Right Mouse Button)
-	MapperState.pasting_multiple = Input.is_key_pressed(KEY_ALT) \
+	MapperState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
 		and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
 		and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) \
 		and mouse_over_tile_map()
@@ -406,36 +414,40 @@ func _process(delta):
 		cursor_state = "Grab"
 		grabbing_map = true
 		cursor_tile.visible = false
+		cursor_preview.visible = false
 		target_box.visible = false
 	elif MapperState.is_erase_mode:
 		set_target_box_color(Color.RED)
 		cursor_tile.visible = false
+		cursor_preview.visible = false
 		target_box.visible = true
 		cursor_state = "Attack"
 	elif mode == MapMode.UNPASSABLE:
 		cursor_tile.visible = true
+		cursor_preview.visible = false
 		target_box.visible = false
 		cursor_state = "Idle"
 	elif Input.is_key_pressed(KEY_ALT):
 		set_target_box_color(Color.CYAN)
 		if start_copy_position == Vector2i(-1, -1) \
-				and MapperState.copying_multiple \
-				and not MapperState.pasting_multiple:
+				and MapperState.copying_multiple:
 			start_copy_position = snapped_mouse_position
-		if start_paste_position == Vector2i(-1, -1) \
-				and MapperState.pasting_multiple \
-				and not MapperState.copying_multiple:
-			start_paste_position = snapped_mouse_position
 		cursor_tile.visible = false
+		cursor_preview.visible = false
 		target_box.visible = true
 		cursor_state = "Select"
 	else:
 		set_target_box_color(Color.GREEN)
-		cursor_tile.visible = true
+		if mode == MapMode.UNPASSABLE:
+			cursor_tile.visible = true
+			cursor_preview.visible = false
+		else:
+			cursor_tile.visible = false
+			cursor_preview.visible = true
 		target_box.visible = true
 		cursor_state = "Idle"
 	
-	# Copy Multiple (Done on Release of ALT + LMB)
+	# Copy Multiple (Done on Release of ALT + RMB)
 	if not MapperState.copying_multiple \
 			and start_copy_position != Vector2i(-1, -1):
 		target_box_size = target_box.size
@@ -448,8 +460,8 @@ func _process(delta):
 			start_copy_position.y / Resources.tile_size,
 		)
 		map_copy_tiles.clear()
-		var copy_image := Image.create_empty(
-			target_box_size.x, target_box_size.y, false, Image.FORMAT_RGBA8)
+		cursor_tile_map.clear()
+		clear_cursor_objects()
 		for y in range(copy_dims.y):
 			map_copy_tiles.append([])
 			for x in range(copy_dims.x):
@@ -464,67 +476,18 @@ func _process(delta):
 				var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[ab_index]
 				var frame := Renderers.map_renderer.tile_renderer.get_frame(ab_index)
 				var frame_rect := Rect2i(0, 0, frame.width, frame.height)
-				var tile_image := Renderers.map_renderer.tile_renderer.render_frame(ab_index, palette_index)
-				if frame.mask_image != null \
-						and frame.mask_image.get_width() > 0 \
-						and frame.mask_image.get_height() > 0:
-					copy_image.blit_rect_mask(
-						Renderers.map_renderer.tile_renderer.render_frame(ab_index, palette_index),
-						frame.mask_image,
-						frame_rect,
-						Vector2i(x * Resources.tile_size, y * Resources.tile_size)
-					)
-				else:
-					copy_image.blit_rect(
-						Renderers.map_renderer.tile_renderer.render_frame(ab_index, palette_index),
-						frame_rect,
-						Vector2i(x * Resources.tile_size, y * Resources.tile_size)
-					)
-		if copy_image.get_width() > 0 \
-				and copy_image.get_height() > 0:
-			cursor_tile.texture = ImageTexture.create_from_image(copy_image)
+				if ab_index > 0:
+					cursor_tile_map.set_cell(0, Vector2i(x, y), ab_index, Vector2i(0, 0))
+				if sobj_index >= 0:
+					var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[sobj_index]
+					var sobj_height := sobj.height
+					var obj_sprite := SObjSprite.new(sobj_index)
+					obj_sprite.position.x = x * Resources.tile_size
+					obj_sprite.offset.y = -(sobj_height) * Resources.tile_size
+					obj_sprite.position.y = ((y - sobj_height + 1) * Resources.tile_size) - obj_sprite.offset.y
+					cursor_objects.add_child(obj_sprite)
 
 		start_copy_position = Vector2i(-1, -1)
-	
-	# Paste Multiple (Done on Release of ALT + RMB)
-	if not MapperState.pasting_multiple \
-			and start_paste_position != Vector2i(-1, -1) \
-			and len(map_copy_tiles) > 0:
-		var start_paste_coordinate: Vector2i = Vector2i(
-			start_paste_position.x / Resources.tile_size,
-			start_paste_position.y / Resources.tile_size
-		)
-		for y in range(len(map_copy_tiles)):
-			for x in range(len(map_copy_tiles[y])):
-				var paste_location: Vector2i = Vector2i(
-					start_paste_coordinate.x + x,
-					start_paste_coordinate.y + y
-				)
-				if paste_location.x >= 0 \
-						and paste_location.x <= 255 \
-						and paste_location.y >= 0 \
-						and paste_location.y <= 255:
-					var tile: Dictionary = map_copy_tiles[y][x]
-					# Tile
-					current_tile_index = tile["ab_index"]
-					insert_tile(Vector2i(paste_location.x, paste_location.y), false)
-					# Object
-					current_object_index = tile["sobj_index"]
-					if current_object_index >= 0:
-						insert_object(Vector2i(paste_location.x, paste_location.y), false)
-					else:
-						erase_object(Vector2i(paste_location.x, paste_location.y), false)
-					# Unpassable
-					var source_tile_unpassable = tile["unpassable"]
-					if source_tile_unpassable:
-						insert_unpassable_tile(Vector2i(paste_location.x, paste_location.y), false)
-					else:
-						erase_unpassable_tile(Vector2i(paste_location.x, paste_location.y), false)
-
-		start_paste_position = Vector2i(-1, -1)
-
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
 
 	# Update Cursor
 	if cursor_state in cursor_renderer.cursors:
@@ -533,18 +496,19 @@ func _process(delta):
 	# Change Tile on Left Mouse Button (LMB) - Insert Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
+			not Input.is_key_pressed(KEY_ALT) and \
 			not MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open and \
 			not MapperState.copying_multiple and \
-			not MapperState.pasting_multiple and \
 			coordinate_on_map(mouse_coordinate):
-		if mode == MapMode.TILE:
-			insert_tile(mouse_coordinate)
-		elif mode == MapMode.OBJECT:
-			insert_object(mouse_coordinate)
-		elif mode == MapMode.UNPASSABLE:
-			insert_unpassable_tile(mouse_coordinate)
+		#if mode == MapMode.TILE:
+			#insert_tile(mouse_coordinate)
+		#elif mode == MapMode.OBJECT:
+			#insert_object(mouse_coordinate)
+		#elif mode == MapMode.UNPASSABLE:
+			#insert_unpassable_tile(mouse_coordinate)
+		paste_cursor_preview(mouse_coordinate)
 		
 		if mouse_coordinate.x + 1 > MapperState.map_size.x:
 			MapperState.map_size.x = mouse_coordinate.x + 1
@@ -554,12 +518,12 @@ func _process(delta):
 
 	# Erase Tile on Left Mouse Button (LMB) - Eraser Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
+			not Input.is_key_pressed(KEY_ALT) and \
 			not Input.is_action_pressed("move-map") and \
 			MapperState.is_erase_mode and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open and \
 			not MapperState.copying_multiple and \
-			not MapperState.pasting_multiple and \
 			coordinate_on_map(mouse_coordinate):
 		if mode == MapMode.TILE:
 			erase_tile(mouse_coordinate)
@@ -572,10 +536,10 @@ func _process(delta):
 		map_bounds_box.size = MapperState.map_size * Resources.tile_size
 	# Copy Tile on Right Mouse Button (RMB) - Default Mode
 	if Input.is_action_just_pressed("copy-tile") and \
+			not Input.is_key_pressed(KEY_ALT) and \
 			cursor_state == "Idle" and \
 			mouse_over_tile_map() and \
 			not MapperState.copying_multiple and \
-			not MapperState.pasting_multiple and \
 			not MapperState.menu_open:
 		var cursor_tile_coord := get_global_mouse_position()
 		cursor_tile_coord.x = floor(cursor_tile_coord.x / Resources.tile_size)
@@ -605,13 +569,9 @@ func _process(delta):
 			not grabbing_map and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open:
-		var adjusted_height := Vector2i(0, 0)
-		if mode == MapMode.OBJECT and current_object_index >= 0:
-			var object_height: int = Renderers.map_renderer.sobj_renderer.sobj.objects[current_object_index].height
-			adjusted_height.y = Resources.tile_size * (object_height - 1)
 		if MapperState.copying_multiple \
-				and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) \
-				and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+				and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
+				and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			target_box.position = start_copy_position
 			# TODO: Update TargetBox
 			target_box.size = Vector2(
@@ -619,12 +579,14 @@ func _process(delta):
 				max(snapped_mouse_position.y - start_copy_position.y + Resources.tile_size, Resources.tile_size),
 			)
 		else:
-			cursor_tile.position = snapped_mouse_position - adjusted_height
+			cursor_tile.position = snapped_mouse_position
+			cursor_preview.position = snapped_mouse_position
 			target_box.position = snapped_mouse_position
 		if mode != MapMode.UNPASSABLE:
 			target_box.visible = true
 	else:
 		cursor_tile.visible = false
+		cursor_preview.visible = false
 		target_box.visible = false
 	
 	if Input.is_action_just_pressed("zoom-in") and \
@@ -732,6 +694,36 @@ func load_map(map_path: String) -> void:
 	
 	camera.position = Vector2(-1000, 400)
 	title_label.text = map_path.split("/")[-1].replace(".cmp", "")
+
+func paste_cursor_preview(paste_coordinate: Vector2i) -> void:
+	for y in range(len(map_copy_tiles)):
+		for x in range(len(map_copy_tiles[y])):
+			var paste_location: Vector2i = Vector2i(
+				paste_coordinate.x + x,
+				paste_coordinate.y + y
+			)
+			if paste_location.x >= 0 \
+					and paste_location.x <= 255 \
+					and paste_location.y >= 0 \
+					and paste_location.y <= 255:
+				var tile: Dictionary = map_copy_tiles[y][x]
+				# Tile
+				current_tile_index = tile["ab_index"]
+				insert_tile(Vector2i(paste_location.x, paste_location.y))
+				# Object
+				current_object_index = tile["sobj_index"]
+				if current_object_index >= 0:
+					insert_object(Vector2i(paste_location.x, paste_location.y))
+				else:
+					erase_object(Vector2i(paste_location.x, paste_location.y))
+				# Unpassable
+				var source_tile_unpassable = tile["unpassable"]
+				if source_tile_unpassable:
+					insert_unpassable_tile(Vector2i(paste_location.x, paste_location.y))
+				else:
+					erase_unpassable_tile(Vector2i(paste_location.x, paste_location.y))
+
+	start_paste_position = Vector2i(-1, -1)
 
 func shift_map(direction: Resources.Direction) -> void:
 	var previous_tile_index: int = current_tile_index
@@ -962,6 +954,8 @@ func erase_unpassable_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) ->
 	map_tiles[coodinate.y][coodinate.x]["unpassable"] = false
 
 func update_cursor_preview(index: int) -> void:
+	cursor_tile_map.clear()
+	clear_cursor_objects()
 	if mode == MapMode.TILE \
 			and index > 0:
 		current_tile_index = index
@@ -969,11 +963,15 @@ func update_cursor_preview(index: int) -> void:
 		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
 		if tile_image.get_width() > 0 \
 				and tile_image.get_height() > 0:
-			cursor_tile.texture = ImageTexture.create_from_image(tile_image)
+			cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
 	elif mode == MapMode.OBJECT \
 			and index >= 0:
 		current_object_index = index
-		cursor_tile.texture = Renderers.map_renderer.sobj_renderer.render_object(current_object_index)
+		var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[current_object_index]
+		var sobj_height := sobj.height
+		var obj_sprite := SObjSprite.new(current_object_index)
+		obj_sprite.position.y = -(sobj_height - 1) * Resources.tile_size
+		cursor_objects.add_child(obj_sprite)
 	elif mode == MapMode.UNPASSABLE:
 		cursor_tile.texture = load("res://Images/placeholder-red.svg")
 
@@ -1085,6 +1083,12 @@ func _on_save_map_pressed():
 
 func clear_objects() -> void:
 	for object in objects.get_children():
+		if object != null:
+			object.queue_free()
+			object = null
+
+func clear_cursor_objects() -> void:
+	for object in cursor_objects.get_children():
 		if object != null:
 			object.queue_free()
 			object = null

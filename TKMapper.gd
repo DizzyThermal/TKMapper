@@ -955,6 +955,8 @@ func erase_unpassable_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) ->
 	map_tiles[coodinate.y][coodinate.x]["unpassable"] = false
 
 func update_cursor_preview(index: int) -> void:
+	map_copy_tiles.clear()
+	map_copy_tiles.append([])
 	cursor_tile_map.clear()
 	clear_cursor_objects()
 	if mode == MapMode.TILE \
@@ -965,6 +967,11 @@ func update_cursor_preview(index: int) -> void:
 		if tile_image.get_width() > 0 \
 				and tile_image.get_height() > 0:
 			cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
+			map_copy_tiles[0].append({
+				"ab_index": current_tile_index,
+				"sobj_index": -1,
+				"unpassable": false,
+			})
 	elif mode == MapMode.OBJECT \
 			and index >= 0:
 		current_object_index = index
@@ -973,8 +980,18 @@ func update_cursor_preview(index: int) -> void:
 		var obj_sprite := SObjSprite.new(current_object_index)
 		obj_sprite.position.y = -(sobj_height - 1) * Resources.tile_size
 		cursor_objects.add_child(obj_sprite)
+		map_copy_tiles[0].append({
+			"ab_index": 0,
+			"sobj_index": current_object_index,
+			"unpassable": false,
+		})
 	elif mode == MapMode.UNPASSABLE:
 		cursor_tile.texture = load("res://Images/placeholder-red.svg")
+		map_copy_tiles[0].append({
+			"ab_index": 0,
+			"sobj_index": -1,
+			"unpassable": true,
+		})
 
 func clear_container(container: Container) -> void:
 	for item in container.get_children():

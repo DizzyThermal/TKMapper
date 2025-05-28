@@ -408,6 +408,7 @@ func _process(delta):
 	MapperState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
 		and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
 		and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) \
+		and mode != MapMode.UNPASSABLE \
 		and mouse_over_tile_map()
 
 	if Input.is_key_pressed(KEY_CTRL) or Input.is_action_pressed("move-map"):
@@ -1284,6 +1285,7 @@ func change_to_tile_mode(start_tile: int=0) -> void:
 	unpassable_mode_button.texture_normal = load("res://Images/placeholder-dark.svg")
 	hide_panel_button.visible = true
 	next_button.visible = true
+	goto_page_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
 	load_tileset(start_tile)
@@ -1302,6 +1304,7 @@ func change_to_object_mode(start_object: int=0) -> void:
 	unpassable_mode_button.texture_normal = load("res://Images/placeholder-dark.svg")
 	hide_panel_button.visible = true
 	next_button.visible = true
+	goto_page_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
 	load_objectset(start_object)
@@ -1323,6 +1326,7 @@ func change_to_unpassable_mode() -> void:
 	page_info_label.text = ""
 	hide_panel_button.visible = false
 	next_button.visible = false
+	goto_page_button.visible = false
 	prev_button.visible = false
 	unpassables.visible = true
 	update_cursor_preview(0)

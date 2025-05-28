@@ -36,7 +36,10 @@ func get_frame(
 		debug_attempt_limit: int=5) -> NTK_Frame:
 	# Frame Cache
 	if frame_index in self.frames:
-		return self.frames[frame_index]
+		mutex.lock()
+		var return_frame: NTK_Frame = self.frames[frame_index]
+		mutex.unlock()
+		return return_frame
 
 	# Read to Frame Data
 	var file_position: int = HEADER_SIZE + pixel_data_length + (frame_index * FRAME_SIZE)
@@ -129,4 +132,10 @@ func get_frame(
 		print_rich("\n  [b][color=red][ERROR][/color]: frame_index: '%s' not in self.frames after %d attempts![/b]\n" % frame_index, debug_attempt_limit)
 		assert(false)
 
-	return self.frames[frame_index] if frame_index in self.frames else frame
+	if frame_index in self.frames:
+		mutex.lock()
+		var return_frame: NTK_Frame = self.frames[frame_index]
+		mutex.unlock()
+		return return_frame
+	else:
+		return frame

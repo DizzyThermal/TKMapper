@@ -11,7 +11,8 @@ var map_regex: RegEx = RegEx.new()
 var start_copy_position: Vector2i = Vector2i(-1, -1)
 var start_paste_position: Vector2i = Vector2i(-1, -1)
 var start_selection_position: int = -1
-var target_box_size: Vector2i = Vector2i(48, 48)
+var target_box_size: Vector2i = Resources.tile_size_vector
+var previous_target_box_size: Vector2i = Resources.tile_size_vector
 
 var max_tile_count := 0
 var max_object_count := 0
@@ -137,7 +138,7 @@ func initialize() -> void:
 	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 	current_tile_page = current_tile_index / int(tile_page_size_spinbox.value)
 	page_info_label.text = "Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
-	change_to_tile_mode(current_tile_index)
+	change_to_tile_mode(current_tile_page)
 
 	# Connect Signals
 	## Viewport
@@ -324,12 +325,10 @@ func _process(delta):
 		change_map_mode()							# M
 	elif Input.is_action_just_pressed("mode-tile") and \
 			not MapperState.menu_open:
-		var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
-		change_to_tile_mode(tile_index)				# T
+		change_to_tile_mode(current_tile_page)		# T
 	elif Input.is_action_just_pressed("mode-object") and \
 			not MapperState.menu_open:
-		var object_index: int = current_object_page * int(object_page_size_spinbox.value)
-		change_to_object_mode(object_index)			# O
+		change_to_object_mode(current_object_page)	# O
 	elif Input.is_action_just_pressed("mode-unpassable") and \
 			not MapperState.menu_open:
 		change_to_unpassable_mode()					# P
@@ -348,9 +347,12 @@ func _process(delta):
 	if Input.is_action_just_pressed("insert-mode") and \
 			not MapperState.menu_open:
 		MapperState.is_erase_mode = false		# I
+		target_box.size = previous_target_box_size
 	elif Input.is_action_just_pressed("erase-mode") and \
 			not MapperState.menu_open:
 		MapperState.is_erase_mode = true		# D | E | X
+		previous_target_box_size = target_box.size
+		target_box.size = Resources.tile_size_vector
 
 	# Page Switching
 	if Input.is_action_just_pressed("next-page") and \
@@ -407,10 +409,11 @@ func _process(delta):
 	
 	# ALT + RMB (Right Mouse Button)
 	MapperState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
-		and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
-		and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) \
+		and (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or \
+			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) \
 		and mode != MapMode.UNPASSABLE \
-		and mouse_over_tile_map()
+		and mouse_over_tile_map() \
+		and not MapperState.is_erase_mode
 
 	if Input.is_key_pressed(KEY_CTRL) or Input.is_action_pressed("move-map"):
 		cursor_state = "Grab"
@@ -457,9 +460,11 @@ func _process(delta):
 			target_box_size.x / Resources.tile_size,
 			target_box_size.y / Resources.tile_size
 		)
+		var real_start_x: int = min(start_copy_position.x, target_box.position.x)
+		var real_start_y: int = min(start_copy_position.y, target_box.position.y)
 		var start_copy_coordinate: Vector2i = Vector2i(
-			start_copy_position.x / Resources.tile_size,
-			start_copy_position.y / Resources.tile_size,
+			real_start_x / Resources.tile_size,
+			real_start_y / Resources.tile_size,
 		)
 		map_copy_tiles.clear()
 		cursor_tile_map.clear()
@@ -467,9 +472,9 @@ func _process(delta):
 		for y in range(copy_dims.y):
 			map_copy_tiles.append([])
 			for x in range(copy_dims.x):
-				var ab_index: int = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["ab_index"]
-				var sobj_index: int = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["sobj_index"]
-				var unpassable: bool = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["unpassable"]
+				var ab_index: int = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["ab_index"] if mode == MapMode.TILE or Input.is_key_pressed(KEY_SHIFT) else -10
+				var sobj_index: int = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["sobj_index"] if mode == MapMode.OBJECT or Input.is_key_pressed(KEY_SHIFT) else -10
+				var unpassable: bool = map_tiles[start_copy_coordinate.y + y][start_copy_coordinate.x + x]["unpassable"] if mode == MapMode.UNPASSABLE or Input.is_key_pressed(KEY_SHIFT) else false
 				map_copy_tiles[y].append({
 					"ab_index": ab_index,
 					"sobj_index": sobj_index,
@@ -478,7 +483,7 @@ func _process(delta):
 				var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[ab_index]
 				var frame := Renderers.map_renderer.tile_renderer.get_frame(ab_index)
 				var frame_rect := Rect2i(0, 0, frame.width, frame.height)
-				if ab_index > 0:
+				if ab_index >= 0:
 					cursor_tile_map.set_cell(0, Vector2i(x, y), ab_index, Vector2i(0, 0))
 				if sobj_index >= 0:
 					var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[sobj_index]
@@ -512,8 +517,71 @@ func _process(delta):
 			MapperState.map_size.y = mouse_coordinate.y + len(map_copy_tiles)
 		map_bounds_box.size = Vector2i(MapperState.map_size.x, MapperState.map_size.y) * Resources.tile_size
 
-	# Erase Tile on Left Mouse Button (LMB) - Eraser Mode
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
+	# Copy Tile(s) from Selection Area (LMB/RMB) - Start Trigger
+	if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or \
+			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
+			not Input.is_action_pressed("move-map") and \
+			not Input.is_key_pressed(KEY_ALT) and \
+			not MapperState.is_erase_mode and \
+			not mouse_over_tile_map() and \
+			MapperState.over_selection_area and \
+			not MapperState.menu_open and \
+			not MapperState.copying_multiple and \
+			start_selection_position == -1:
+		if mode == MapMode.TILE:
+			start_selection_position = self.hover_tile_index
+		elif mode == MapMode.OBJECT:
+			start_selection_position = self.hover_object_index
+	# Copy Tile(s) from Selection Area (LMB/RMB) - End Trigger
+	elif (not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
+				not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
+			not Input.is_action_pressed("move-map") and \
+			not Input.is_key_pressed(KEY_ALT) and \
+			not MapperState.is_erase_mode and \
+			not mouse_over_tile_map() and \
+			MapperState.over_selection_area and \
+			not MapperState.menu_open and \
+			not MapperState.copying_multiple and \
+			not start_selection_position == -1:
+		var end_selection_position = start_selection_position
+		map_copy_tiles.clear()
+		map_copy_tiles.append([])
+		cursor_tile_map.clear()
+		clear_cursor_objects()
+		if mode == MapMode.TILE:
+			end_selection_position = self.hover_tile_index
+			var real_start: int = min(start_selection_position, end_selection_position + 1)
+			var real_end: int = max(start_selection_position, end_selection_position + 1)
+			for i in range(real_start, real_end):
+				cursor_tile_map.set_cell(0, Vector2i(i, 0), i, Vector2i(0, 0))
+				map_copy_tiles[0].append({
+					"ab_index": i,
+					"sobj_index": -1,
+					"unpassable": false,
+				})
+			target_box_size = Vector2i(real_end - real_start * Resources.tile_size, Resources.tile_size)
+		elif mode == MapMode.OBJECT:
+			end_selection_position = self.hover_object_index
+			var real_start: int = min(start_selection_position, end_selection_position + 1)
+			var real_end: int = max(start_selection_position, end_selection_position + 1)
+			for i in range(real_start, real_end):
+				var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[i]
+				var sobj_height := sobj.height
+				var obj_sprite := SObjSprite.new(i)
+				obj_sprite.position.x = i * Resources.tile_size
+				obj_sprite.offset.y = -(sobj_height) * Resources.tile_size
+				obj_sprite.position.y = ((-sobj_height + 1) * Resources.tile_size) - obj_sprite.offset.y
+				cursor_objects.add_child(obj_sprite)
+				map_copy_tiles[0].append({
+					"ab_index": 0,
+					"sobj_index": i,
+					"unpassable": false,
+				})
+		start_selection_position = -1
+
+	# Erase Tile on Mouse Button (LMB/RMB) - Eraser Mode
+	if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or \
+			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
 			not Input.is_key_pressed(KEY_ALT) and \
 			not Input.is_action_pressed("move-map") and \
 			MapperState.is_erase_mode and \
@@ -530,7 +598,7 @@ func _process(delta):
 
 		MapperState.map_size = calculate_map_size()
 		map_bounds_box.size = MapperState.map_size * Resources.tile_size
-	# Copy Tile on Right Mouse Button (RMB) - Default Mode
+	# Copy Tile on Right Mouse Button (RMB) - Insert Mode
 	if Input.is_action_just_pressed("copy-tile") and \
 			not Input.is_key_pressed(KEY_ALT) and \
 			cursor_state == "Idle" and \
@@ -552,12 +620,12 @@ func _process(delta):
 				var previous_tile_page = current_tile_page
 				current_tile_page = current_tile_index / int(tile_page_size_spinbox.value)
 				if previous_tile_page != current_tile_page:
-					load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
+					load_tileset(current_tile_page)
 			elif mode == MapMode.OBJECT:
 				var previous_object_page = current_object_page
 				current_object_page = current_object_index / int(object_page_size_spinbox.value)
 				if previous_object_page != current_object_page:
-					load_objectset(current_object_page * int(object_page_size_spinbox.value))
+					load_objectset(current_object_page)
 
 	# Tile Preview
 	if coordinate_on_map(mouse_coordinate) and \
@@ -565,14 +633,15 @@ func _process(delta):
 			not grabbing_map and \
 			mouse_over_tile_map() and \
 			not MapperState.menu_open:
-		if MapperState.copying_multiple \
-				and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) \
-				and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			target_box.position = start_copy_position
-			# TODO: Update TargetBox
+		if MapperState.copying_multiple:
+			var real_start_x: int = min(start_copy_position.x, snapped_mouse_position.x)
+			var real_start_y: int = min(start_copy_position.y, snapped_mouse_position.y)
+			var real_end_x: int = max(start_copy_position.x, snapped_mouse_position.x)
+			var real_end_y: int = max(start_copy_position.y, snapped_mouse_position.y)
+			target_box.position = Vector2i(real_start_x, real_start_y)
 			target_box.size = Vector2(
-				max(snapped_mouse_position.x - start_copy_position.x + Resources.tile_size, Resources.tile_size),
-				max(snapped_mouse_position.y - start_copy_position.y + Resources.tile_size, Resources.tile_size),
+				max(real_end_x - real_start_x + Resources.tile_size, Resources.tile_size),
+				max(real_end_y - real_start_y + Resources.tile_size, Resources.tile_size),
 			)
 		else:
 			cursor_tile.position = snapped_mouse_position
@@ -613,18 +682,6 @@ func _process(delta):
 			status_label.text = "Tile Index: " + str(self.hover_tile_index)
 		elif mode == MapMode.OBJECT:
 			status_label.text = "Object Index: " + str(self.hover_object_index)
-
-#func _input(event):
-	#if event is InputEventMouseButton:
-		#if MapperState.over_selection_area and \
-				#not MapperState.menu_open and \
-				#start_selection_position == -1:
-			#if mode == MapMode.TILE:
-				#start_selection_position = self.hover_tile_index
-				#update_cursor_preview(self.hover_tile_index)
-			#elif mode == MapMode.OBJECT:
-				#start_selection_position = self.hover_object_index
-				#update_cursor_preview(self.hover_object_index)
 
 func update_tool_tip(
 		tool_tip_text: String,
@@ -708,18 +765,21 @@ func paste_cursor_preview(paste_coordinate: Vector2i) -> void:
 				var tile: Dictionary = map_copy_tiles[y][x]
 				# Tile
 				current_tile_index = tile["ab_index"]
-				insert_tile(Vector2i(paste_location.x, paste_location.y))
+				if current_tile_index >= 0:
+					insert_tile(Vector2i(paste_location.x, paste_location.y))
+				elif mode == MapMode.TILE or Input.is_key_pressed(KEY_SHIFT):
+					erase_tile(Vector2i(paste_location.x, paste_location.y))
 				# Object
 				current_object_index = tile["sobj_index"]
 				if current_object_index >= 0:
 					insert_object(Vector2i(paste_location.x, paste_location.y))
-				else:
+				elif mode == MapMode.OBJECT or Input.is_key_pressed(KEY_SHIFT):
 					erase_object(Vector2i(paste_location.x, paste_location.y))
 				# Unpassable
 				var source_tile_unpassable = tile["unpassable"]
 				if source_tile_unpassable:
 					insert_unpassable_tile(Vector2i(paste_location.x, paste_location.y))
-				else:
+				elif mode == MapMode.UNPASSABLE or Input.is_key_pressed(KEY_SHIFT):
 					erase_unpassable_tile(Vector2i(paste_location.x, paste_location.y))
 
 	start_paste_position = Vector2i(-1, -1)
@@ -1002,9 +1062,10 @@ func render_tile(thread_tile_index: int) -> void:
 	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[tile_index]
 	Renderers.map_renderer.tile_renderer.render_frame(tile_index, palette_index)
 
-func load_tileset(start_tile: int=0) -> void:
+func load_tileset(start_page: int=0) -> void:
 	var tile_count: int = int(tile_page_size_spinbox.value)
-	var end_tile = min(start_tile + tile_count + 1, Renderers.map_renderer.tile_renderer.tbl.tile_count)
+	var start_tile: int = start_page * tile_count
+	var end_tile = min(start_tile + tile_count, Renderers.map_renderer.tile_renderer.tbl.tile_count)
 
 	# Prune Cache
 	var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
@@ -1040,9 +1101,10 @@ func render_object(thread_object_index: int) -> void:
 	var object_index: int = thread_ids[thread_object_index]
 	Renderers.map_renderer.sobj_renderer.render_object(object_index)
 
-func load_objectset(start_object: int=0) -> void:
+func load_objectset(start_page: int=0) -> void:
 	var object_count: int = int(object_page_size_spinbox.value)
-	var end_object = min(start_object + object_count + 1, Renderers.map_renderer.sobj_renderer.sobj.object_count)
+	var start_object: int = start_page * object_count
+	var end_object = min(start_object + object_count, Renderers.map_renderer.sobj_renderer.sobj.object_count)
 
 	# Prune Cache
 	var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
@@ -1177,13 +1239,11 @@ func _on_file_dialog_canceled():
 func change_map_mode() -> void:
 	# Cycle Modes (Icon is the NEXT mode, does that make sense?)
 	if mode == MapMode.TILE:
-		var object_index: int = current_object_page * int(object_page_size_spinbox.value)
-		change_to_object_mode(object_index)
+		change_to_object_mode(current_object_page)
 	elif mode == MapMode.OBJECT:
 		change_to_unpassable_mode()
 	elif mode == MapMode.UNPASSABLE:
-		var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
-		change_to_tile_mode(tile_index)
+		change_to_tile_mode(current_tile_page)
 
 func _on_mode_pressed():
 	change_map_mode()
@@ -1211,13 +1271,13 @@ func _next_page() -> void:
 		var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 		current_tile_page = min(max_tile_pages, current_tile_page + 1)
 		if previous_tile_page != current_tile_page:
-			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
+			load_tileset(current_tile_page)
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
 		var max_object_pages: int = ceil(max_object_count / int(object_page_size_spinbox.value))
 		current_object_page = min(max_object_pages, current_object_page + 1)
 		if previous_object_page != current_object_page:
-			load_objectset(current_object_page * int(object_page_size_spinbox.value))
+			load_objectset(current_object_page)
 
 func _on_next_tile_pressed():
 	_next_page()
@@ -1227,12 +1287,12 @@ func _prev_page() -> void:
 		var previous_tile_page = current_tile_page
 		current_tile_page = max(0, current_tile_page - 1)
 		if previous_tile_page != current_tile_page:
-			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
+			load_tileset(current_tile_page)
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
 		current_object_page = max(0, current_object_page - 1)
 		if previous_object_page != current_object_page:
-			load_objectset(current_object_page * int(object_page_size_spinbox.value))
+			load_objectset(current_object_page)
 
 func _on_previous_tile_pressed():
 	_prev_page()
@@ -1292,7 +1352,7 @@ func _on_settings_pressed():
 	else:
 		MapperState.menu_open = true
 
-func change_to_tile_mode(start_tile: int=0) -> void:
+func change_to_tile_mode(start_page: int=0) -> void:
 	_toggle_selection_area(true, false)
 	mode = MapMode.TILE
 	tile_mode_button.texture_normal = load("res://Images/contrast-bright.svg")
@@ -1303,15 +1363,15 @@ func change_to_tile_mode(start_tile: int=0) -> void:
 	goto_page_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
-	load_tileset(start_tile)
+	load_tileset(start_page)
 	update_cursor_preview(current_tile_index)
 	_toggle_selection_area(true, true)
 
 func _on_tile_mode_pressed():
 	var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
-	change_to_tile_mode(tile_index)
+	change_to_tile_mode(current_tile_page)
 
-func change_to_object_mode(start_object: int=0) -> void:
+func change_to_object_mode(start_page: int=0) -> void:
 	_toggle_selection_area(true, false)
 	mode = MapMode.OBJECT
 	tile_mode_button.texture_normal = load("res://Images/contrast-dark.svg")
@@ -1322,7 +1382,7 @@ func change_to_object_mode(start_object: int=0) -> void:
 	goto_page_button.visible = true
 	prev_button.visible = true
 	unpassables.visible = false
-	load_objectset(start_object)
+	load_objectset(start_page)
 	update_cursor_preview(current_object_index)
 	_toggle_selection_area(true, true)
 
@@ -1399,7 +1459,7 @@ func  _goto_page(page_number: int):
 		current_tile_page = max(0, current_tile_page)
 		goto_page_spinbox.value = current_tile_page + 1
 		if previous_tile_page != current_tile_page:
-			load_tileset(current_tile_page * int(tile_page_size_spinbox.value))
+			load_tileset(current_tile_page)
 	elif mode == MapMode.OBJECT:
 		var previous_object_page = current_object_page
 		var max_object_pages: int = ceil(max_object_count / int(object_page_size_spinbox.value))
@@ -1407,7 +1467,7 @@ func  _goto_page(page_number: int):
 		current_object_page = max(0, current_object_page)
 		goto_page_spinbox.value = current_object_page + 1
 		if previous_object_page != current_object_page:
-			load_objectset(current_object_page * int(object_page_size_spinbox.value))
+			load_objectset(current_object_page)
 
 func _on_go_to_page_pressed():
 	if mode == MapMode.UNPASSABLE:

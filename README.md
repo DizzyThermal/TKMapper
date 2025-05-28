@@ -49,7 +49,8 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 
 * ` Scroll Wheel `: Zoom Map
 * ` CTRL + Left Mouse Button `: Drag/move map
-* ` ALT + Right Mouse Button `: Copy Multiple Tiles/Objects (Click + Drag to Select)
+* ` ALT + Left/Right Mouse Button `: Copy Multiple Tiles of CURRENT MapMode (Tile/Object/Unpassable)
+* ` SHIFT + ALT + Left/Right Mouse Button `: Copy Multiple Tiles of ALL Layers (Tile/Object/Unpassable)
 
 #### Mode Specific Mouse Shortcuts
 
@@ -62,6 +63,7 @@ NexusTK Map Creator/Editor written in [Godot](https://godotengine.org/) 4.x
 * Insert Mode (Over Tile/Object Selection):
     * ` Left Mouse Button `: Copies the tile or object under the mouse cursor as the
     currently selected tile or object
+    * Note: Clicking-and-Dragging will select multiple tiles/objects
 
 * Delete Mode (Over Map):
-    * ` Left Mouse Button `: Deletes the tile or object under the mouse cursor
+    * ` Left/Right Mouse Button `: Deletes the tile or object under the mouse cursor

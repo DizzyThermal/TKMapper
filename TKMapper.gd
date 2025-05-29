@@ -11,7 +11,6 @@ var map_regex: RegEx = RegEx.new()
 var start_copy_position: Vector2i = Vector2i(-1, -1)
 var start_paste_position: Vector2i = Vector2i(-1, -1)
 var start_selection_position: int = -1
-var target_box_size: Vector2i = Resources.tile_size_vector
 var previous_target_box_size: Vector2i = Resources.tile_size_vector
 
 var max_tile_count := 0
@@ -118,13 +117,13 @@ func initialize() -> void:
 	var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
 	if tile_image.get_width() > 0 \
 			and tile_image.get_height() > 0:
-		cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
 		map_copy_tiles.append([])
 		map_copy_tiles[0].append({
 			"ab_index": current_tile_index,
 			"sobj_index": -1,
 			"unpassable": false,
 		})
+		cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
 		
 	cursor_tile.z_index = 2
 	cursor_tile.centered = false
@@ -455,10 +454,9 @@ func _process(delta):
 	# Copy Multiple (Done on Release of ALT + RMB)
 	if not MapperState.copying_multiple \
 			and start_copy_position != Vector2i(-1, -1):
-		target_box_size = target_box.size
 		var copy_dims: Vector2i = Vector2i(
-			target_box_size.x / Resources.tile_size,
-			target_box_size.y / Resources.tile_size
+			target_box.size.x / Resources.tile_size,
+			target_box.size.y / Resources.tile_size
 		)
 		var real_start_x: int = min(start_copy_position.x, target_box.position.x)
 		var real_start_y: int = min(start_copy_position.y, target_box.position.y)
@@ -484,6 +482,8 @@ func _process(delta):
 				var frame := Renderers.map_renderer.tile_renderer.get_frame(ab_index)
 				var frame_rect := Rect2i(0, 0, frame.width, frame.height)
 				if ab_index >= 0:
+					if ab_index not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
+						Renderers.map_renderer.add_tile_to_tile_set_source(self, ab_index)
 					cursor_tile_map.set_cell(0, Vector2i(x, y), ab_index, Vector2i(0, 0))
 				if sobj_index >= 0:
 					var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[sobj_index]
@@ -543,37 +543,35 @@ func _process(delta):
 			not MapperState.menu_open and \
 			not MapperState.copying_multiple and \
 			not start_selection_position == -1:
-		var end_selection_position = start_selection_position
 		map_copy_tiles.clear()
 		map_copy_tiles.append([])
 		cursor_tile_map.clear()
 		clear_cursor_objects()
+		var end_selection_position: int  = self.hover_tile_index if mode == MapMode.TILE else self.hover_object_index
+		var real_start: int = min(start_selection_position, end_selection_position)
+		var real_end: int = max(start_selection_position, end_selection_position)
+		target_box.size = Vector2i((real_end - real_start + 1) * Resources.tile_size, Resources.tile_size)
 		if mode == MapMode.TILE:
-			end_selection_position = self.hover_tile_index
-			var real_start: int = min(start_selection_position, end_selection_position + 1)
-			var real_end: int = max(start_selection_position, end_selection_position + 1)
-			for i in range(real_start, real_end):
-				cursor_tile_map.set_cell(0, Vector2i(i, 0), i, Vector2i(0, 0))
+			for i in range(real_start, real_end + 1):
+				if i not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
+					Renderers.map_renderer.add_tile_to_tile_set_source(self, i)
+				cursor_tile_map.set_cell(0, Vector2i(i - real_start, 0), i, Vector2i(0, 0))
 				map_copy_tiles[0].append({
 					"ab_index": i,
-					"sobj_index": -1,
+					"sobj_index": -10,
 					"unpassable": false,
 				})
-			target_box_size = Vector2i(real_end - real_start * Resources.tile_size, Resources.tile_size)
 		elif mode == MapMode.OBJECT:
-			end_selection_position = self.hover_object_index
-			var real_start: int = min(start_selection_position, end_selection_position + 1)
-			var real_end: int = max(start_selection_position, end_selection_position + 1)
-			for i in range(real_start, real_end):
+			for i in range(real_start, real_end + 1):
 				var sobj: SObj = Renderers.map_renderer.sobj_renderer.sobj.objects[i]
 				var sobj_height := sobj.height
 				var obj_sprite := SObjSprite.new(i)
-				obj_sprite.position.x = i * Resources.tile_size
+				obj_sprite.position.x = (i - real_start) * Resources.tile_size
 				obj_sprite.offset.y = -(sobj_height) * Resources.tile_size
 				obj_sprite.position.y = ((-sobj_height + 1) * Resources.tile_size) - obj_sprite.offset.y
 				cursor_objects.add_child(obj_sprite)
 				map_copy_tiles[0].append({
-					"ab_index": 0,
+					"ab_index": -10,
 					"sobj_index": i,
 					"unpassable": false,
 				})
@@ -613,8 +611,7 @@ func _process(delta):
 			if mode == MapMode.OBJECT:
 				index = map_tiles[cursor_tile_coord.y][cursor_tile_coord.x]["sobj_index"]
 			update_cursor_preview(index)
-			target_box_size = Resources.tile_size_vector
-			target_box.size = target_box_size
+			target_box.size = Resources.tile_size_vector
 			# Seek to Page
 			if mode == MapMode.TILE:
 				var previous_tile_page = current_tile_page
@@ -650,6 +647,13 @@ func _process(delta):
 		if mode != MapMode.UNPASSABLE:
 			target_box.visible = true
 	else:
+		#print("---------------chasing-down-focus-bug---------------------")
+		#print("mouse_coordinate: ", mouse_coordinate)
+		#print("coordinate_on_map: ", coordinate_on_map(mouse_coordinate))
+		#print("mouse_position.y >= 4 :: ", mouse_position.y >= 4)
+		#print("not grabbing_map :: ", not grabbing_map)
+		#print("mouse_over_tile_map() :: ", mouse_over_tile_map())
+		#print("not MapperState.menu_open :: ", not MapperState.menu_open)
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = false
@@ -912,9 +916,6 @@ func insert_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) -> void:
 	if current_tile_index < 0:
 		return
 
-	if current_tile_index not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
-		Renderers.map_renderer.add_tile_to_tile_set_source(self, coodinate, current_tile_index)
-
 	var previous_tile_index = map_tiles[coodinate.y][coodinate.x]["ab_index"]
 	if previous_tile_index != current_tile_index and add_to_undo_stack:
 		undo_stack.insert(0, {
@@ -924,6 +925,8 @@ func insert_tile(coodinate: Vector2i, add_to_undo_stack: bool=true) -> void:
 			"type": MapMode.TILE,
 		})
 		undo_button.disabled = false
+	if current_tile_index not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
+		Renderers.map_renderer.add_tile_to_tile_set_source(self, current_tile_index)
 	tile_map.set_cell(0, coodinate, current_tile_index, Vector2i(0, 0))
 	undo_button.disabled = false
 	map_tiles[coodinate.y][coodinate.x]["ab_index"] = current_tile_index
@@ -1024,12 +1027,14 @@ func update_cursor_preview(index: int) -> void:
 		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
 		if tile_image.get_width() > 0 \
 				and tile_image.get_height() > 0:
-			cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
 			map_copy_tiles[0].append({
 				"ab_index": current_tile_index,
-				"sobj_index": -1,
+				"sobj_index": -10,
 				"unpassable": false,
 			})
+			if current_tile_index not in Renderers.map_renderer.ntk_tileset_source.tile_atlas_position_by_tile_index:
+				Renderers.map_renderer.add_tile_to_tile_set_source(self, current_tile_index)
+			cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
 	elif mode == MapMode.OBJECT \
 			and index >= 0:
 		current_object_index = index
@@ -1039,15 +1044,15 @@ func update_cursor_preview(index: int) -> void:
 		obj_sprite.position.y = -(sobj_height - 1) * Resources.tile_size
 		cursor_objects.add_child(obj_sprite)
 		map_copy_tiles[0].append({
-			"ab_index": 0,
+			"ab_index": -10,
 			"sobj_index": current_object_index,
 			"unpassable": false,
 		})
 	elif mode == MapMode.UNPASSABLE:
 		cursor_tile.texture = load("res://Images/placeholder-red.svg")
 		map_copy_tiles[0].append({
-			"ab_index": 0,
-			"sobj_index": -1,
+			"ab_index": -10,
+			"sobj_index": -10,
 			"unpassable": true,
 		})
 

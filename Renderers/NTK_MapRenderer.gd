@@ -136,7 +136,6 @@ func create_tile_set_source() -> TileSetAtlasSource:
 
 func add_tile_to_tile_set_source(
 		parent: Node2D,
-		position: Vector2i,
 		tile_index: int) -> void:
 	var palette_index = tile_renderer.tbl.palette_indices[tile_index]
 	var frame: NTK_Frame = null

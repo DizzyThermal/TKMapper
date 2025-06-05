@@ -1089,16 +1089,10 @@ func load_tileset(start_page: int=0) -> void:
 	# Load Tile Selection Area
 	clear_container(tile_set_container)
 	for i in range(start_tile, end_tile):
-		var tile := TextureRect.new()
-		tile.custom_minimum_size = Resources.tile_size_vector
-		var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[i]
-		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(i, palette_index)
-		if tile_image != null \
-				and tile_image.get_width() > 0 \
-				and tile_image.get_height() > 0:
-			tile.texture = ImageTexture.create_from_image(tile_image)
-		tile.connect("mouse_entered", func(): self.hover_tile_index = i)
-		tile_set_container.add_child(tile)
+		var tile_texture := TileTextureRect.new(i)
+		tile_texture.custom_minimum_size = Resources.tile_size_vector
+		tile_texture.connect("mouse_entered", func(): self.hover_tile_index = i)
+		tile_set_container.add_child(tile_texture)
 	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 

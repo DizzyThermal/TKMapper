@@ -147,7 +147,14 @@ func add_tile_to_tile_set_source(
 			Resources.arrays_intersect(
 				palette.animation_indices,
 				frame.raw_pixel_data_array):
-		var animation_count := len(palette.animation_indices) / len(palette.animation_ranges)
+		var animation_count := 0
+		var animated_colors: Array[int] = []
+		for animation_range in palette.animation_ranges:
+			var min_index = animation_range.min_index
+			var max_index = animation_range.max_index
+			animated_colors.append(range(min_index, max_index+1))
+			if max_index - min_index + 1 > animation_count:
+				animation_count = max_index - min_index + 1
 		var tile_image: Image = tile_renderer.render_animated_frame(
 			tile_index, animation_count, palette_index)
 		if tile_image.get_width() > 0 \

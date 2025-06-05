@@ -12,7 +12,7 @@ var animation_length: int = 0
 func _init(object_index: int) -> void:
 	self.object_index = object_index
 	self.texture = Renderers.map_renderer.sobj_renderer.render_object(
-		self.object_index, palette_animation_last_tick)
+		self.object_index, self.palette_animation_last_tick)
 	self.centered = false
 	self.y_sort_enabled = true
 	self.z_index = 1
@@ -29,8 +29,8 @@ func _init(object_index: int) -> void:
 			var min_index = animation_range.min_index
 			var max_index = animation_range.max_index
 			animated_colors.append(range(min_index, max_index+1))
-			if max_index - min_index + 1 > animation_length:
-				animation_length = max_index - min_index + 1
+			if max_index - min_index + 1 > self.animation_length:
+				self.animation_length = max_index - min_index + 1
 		var frame: NTK_Frame = Renderers.map_renderer.sobj_renderer.tilec_renderer.get_frame(tile_index)
 		var frame_raw_pixel_data: Array[int] = frame.raw_pixel_data_array
 		if Resources.arrays_intersect(palette.animation_indices, frame_raw_pixel_data):
@@ -38,8 +38,8 @@ func _init(object_index: int) -> void:
 			break
 
 func _process(delta):
-	if MapperState.palette_animation_tick != palette_animation_last_tick \
-			and is_animated:
-		palette_animation_last_tick = MapperState.palette_animation_tick
+	if MapperState.palette_animation_tick != self.palette_animation_last_tick \
+			and self.is_animated:
+		self.palette_animation_last_tick = MapperState.palette_animation_tick
 		self.texture = Renderers.map_renderer.sobj_renderer.render_object(
-			self.object_index, palette_animation_last_tick % animation_length)
+			self.object_index, self.palette_animation_last_tick % self.animation_length)

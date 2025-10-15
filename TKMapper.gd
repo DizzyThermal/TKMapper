@@ -113,20 +113,25 @@ func initialize() -> void:
 	# Create Cursor Tile
 	cursor_tile_map.tile_set = tile_map.tile_set
 	current_tile_index = map_tiles[0][0]["ab_index"]
-	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
-	var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
-	if tile_image.get_width() > 0 \
-			and tile_image.get_height() > 0:
-		map_copy_tiles.append([])
-		map_copy_tiles[0].append({
-			"ab_index": current_tile_index,
-			"sobj_index": -1,
-			"unpassable": false,
-		})
-		cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
-		
-	cursor_tile.z_index = 2
-	cursor_tile.centered = false
+	for y in range(len(map_tiles)):
+		for x in range(len(map_tiles[y])):
+			if "ab_index" in map_tiles[y][x] and map_tiles[y][x]["ab_index"] != 0:
+				current_tile_index = map_tiles[y][x]["ab_index"]
+	if current_tile_index > 0:
+		var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
+		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
+		if tile_image.get_width() > 0 \
+				and tile_image.get_height() > 0:
+			map_copy_tiles.append([])
+			map_copy_tiles[0].append({
+				"ab_index": current_tile_index,
+				"sobj_index": -1,
+				"unpassable": false,
+			})
+			cursor_tile_map.set_cell(0, Vector2i(0, 0), current_tile_index, Vector2i(0, 0))
+
+		cursor_tile.z_index = 2
+		cursor_tile.centered = false
 	add_child(cursor_tile)
 	add_child(cursor_tile_map)
 	set_target_box_color(Color.GREEN)

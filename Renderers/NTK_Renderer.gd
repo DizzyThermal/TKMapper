@@ -103,8 +103,7 @@ func create_pixel_data(
 		var raw_idx = raw[i]
 		var mapped_idx = color_map[raw_idx]
 		var color_u32 = palette_colors[mapped_idx].to_abgr32()
-		# abgr32 | 0xFF000000 <- Sets Alpha to 255
-		pixel_data.encode_u32(i * 4, color_u32 | 0xFF000000)
+		pixel_data.encode_u32(i * 4, color_u32)
 
 	return pixel_data
 

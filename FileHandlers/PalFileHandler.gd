@@ -41,7 +41,7 @@ func _init(file):
 			animation_indices.append_array(range(min_index, max_index + 1))
 		var colors: Array[Color] = []
 		for j in range(Resources.palette_color_count):
-			var color := Color.hex(read_u32be(file_position))
+			var color := Color.hex(read_u32be(file_position) | 0xFF)
 			file_position += 4
 			colors.append(color)
 		var palette = Palette.new(colors, animation_ranges, animation_indices, unknown_bytes_1, unknown_bytes_2)

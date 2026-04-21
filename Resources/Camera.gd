@@ -5,8 +5,9 @@ var screen_start_position
 
 var dragging = false
 
-var min_zoom = 0.1
-var max_zoom = 2
+var zoom_step = 2.0
+var min_zoom = 0.125
+var max_zoom = 4
 
 func _input(event):
 	if event.is_action("move-map"):

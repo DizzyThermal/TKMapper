@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://2cpgksqbq3uy"]
+[gd_scene format=3 uid="uid://2cpgksqbq3uy"]
 
 [ext_resource type="Script" uid="uid://ddml1oldxxlp1" path="res://TKMapper.gd" id="1_s3pl7"]
 [ext_resource type="Script" uid="uid://4ae0lhk0pdc8" path="res://Resources/Camera.gd" id="2_sv5qs"]
@@ -78,30 +78,29 @@ expand_margin_top = 4.0
 expand_margin_right = 8.0
 expand_margin_bottom = 4.0
 
-[node name="TKMapper" type="Node2D"]
+[node name="TKMapper" type="Node2D" unique_id=1429030584]
 script = ExtResource("1_s3pl7")
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1827401480]
 position = Vector2(512, 383)
 script = ExtResource("2_sv5qs")
 
-[node name="TileMap" type="TileMap" parent="."]
-format = 2
+[node name="Tiles" type="Node2D" parent="." unique_id=1950552952]
 
-[node name="Objects" type="Node2D" parent="."]
+[node name="Objects" type="Node2D" parent="." unique_id=1208300648]
 z_index = 2
 
-[node name="Unpassables" type="Node2D" parent="."]
+[node name="Unpassables" type="Node2D" parent="." unique_id=1125469176]
 z_index = 3
 
-[node name="CursorPreview" type="Node2D" parent="."]
+[node name="CursorPreview" type="Node2D" parent="." unique_id=553941191]
+z_index = 2
 
-[node name="TileMap" type="TileMap" parent="CursorPreview"]
-format = 2
+[node name="Tiles" type="Node2D" parent="CursorPreview" unique_id=1592009158]
 
-[node name="Objects" type="Node2D" parent="CursorPreview"]
+[node name="Objects" type="Node2D" parent="CursorPreview" unique_id=683484498]
 
-[node name="TargetBox" type="Panel" parent="."]
+[node name="TargetBox" type="Panel" parent="." unique_id=255634768]
 z_index = 3
 offset_left = -24.0
 offset_top = -24.0
@@ -109,19 +108,19 @@ offset_right = 24.0
 offset_bottom = 24.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_svl66")
 
-[node name="MapLimitsBox" type="Panel" parent="."]
+[node name="MapLimitsBox" type="Panel" parent="." unique_id=1342791051]
 offset_right = 12288.0
 offset_bottom = 12288.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_gmerm")
 
-[node name="MapBoundsBox" type="Panel" parent="."]
+[node name="MapBoundsBox" type="Panel" parent="." unique_id=1282550833]
 offset_right = 48.0
 offset_bottom = 48.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_52rl1")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=936130873]
 
-[node name="ToolTipLabel" type="Label" parent="CanvasLayer"]
+[node name="ToolTipLabel" type="Label" parent="CanvasLayer" unique_id=1126240476]
 visible = false
 z_index = 1
 offset_right = 40.0
@@ -130,14 +129,14 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_d5gi8")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Title" type="ColorRect" parent="CanvasLayer"]
+[node name="Title" type="ColorRect" parent="CanvasLayer" unique_id=1873052053]
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 42.0
 size_flags_horizontal = 3
 color = Color(0, 0, 0, 1)
 
-[node name="TitleLabel" type="Label" parent="CanvasLayer/Title"]
+[node name="TitleLabel" type="Label" parent="CanvasLayer/Title" unique_id=1607647737]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -155,10 +154,10 @@ text = "TKMapper"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="FileDialog" type="FileDialog" parent="CanvasLayer/Title"]
+[node name="FileDialog" type="FileDialog" parent="CanvasLayer/Title" unique_id=589655808]
 size = Vector2i(348, 180)
 
-[node name="LoadMap" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="LoadMap" type="TextureButton" parent="CanvasLayer/Title" unique_id=1984018494]
 layout_mode = 0
 offset_left = 1.0
 offset_top = 5.0
@@ -169,7 +168,7 @@ texture_pressed = ExtResource("3_pqjdy")
 texture_hover = ExtResource("4_olfhn")
 texture_disabled = ExtResource("4_kglqp")
 
-[node name="SaveMap" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="SaveMap" type="TextureButton" parent="CanvasLayer/Title" unique_id=2139174448]
 layout_mode = 0
 offset_left = 35.0
 offset_top = 5.0
@@ -180,7 +179,7 @@ texture_pressed = ExtResource("4_u1d22")
 texture_hover = ExtResource("7_7rivj")
 texture_disabled = ExtResource("6_hasb6")
 
-[node name="TileMode" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="TileMode" type="TextureButton" parent="CanvasLayer/Title" unique_id=1336016848]
 layout_mode = 0
 offset_left = 91.0
 offset_top = 5.0
@@ -191,7 +190,7 @@ texture_pressed = ExtResource("10_fdsbv")
 texture_hover = ExtResource("9_w4jf0")
 texture_disabled = ExtResource("11_dcm3f")
 
-[node name="ObjectMode" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="ObjectMode" type="TextureButton" parent="CanvasLayer/Title" unique_id=238085965]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 5.0
@@ -202,7 +201,7 @@ texture_pressed = ExtResource("9_i8s3w")
 texture_hover = ExtResource("10_644m5")
 texture_disabled = ExtResource("11_sjp7p")
 
-[node name="UnpassableMode" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="UnpassableMode" type="TextureButton" parent="CanvasLayer/Title" unique_id=697232064]
 layout_mode = 0
 offset_left = 160.0
 offset_top = 5.0
@@ -213,7 +212,7 @@ texture_pressed = ExtResource("15_vk3jw")
 texture_hover = ExtResource("16_o2vu3")
 texture_disabled = ExtResource("17_7d3bf")
 
-[node name="HideObjects" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="HideObjects" type="TextureButton" parent="CanvasLayer/Title" unique_id=814883638]
 layout_mode = 0
 offset_left = 217.0
 offset_top = 5.0
@@ -224,7 +223,7 @@ texture_pressed = ExtResource("11_s3tua")
 texture_hover = ExtResource("16_ggb22")
 texture_disabled = ExtResource("12_daljj")
 
-[node name="Undo" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="Undo" type="TextureButton" parent="CanvasLayer/Title" unique_id=1251875192]
 layout_mode = 0
 offset_left = 251.0
 offset_top = 5.0
@@ -235,7 +234,7 @@ texture_pressed = ExtResource("15_2a4ub")
 texture_hover = ExtResource("25_hk2co")
 texture_disabled = ExtResource("16_4k3qj")
 
-[node name="Settings" type="TextureButton" parent="CanvasLayer/Title"]
+[node name="Settings" type="TextureButton" parent="CanvasLayer/Title" unique_id=446541536]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
@@ -249,7 +248,7 @@ texture_pressed = ExtResource("24_u1l8f")
 texture_hover = ExtResource("25_sij56")
 texture_disabled = ExtResource("26_rij7b")
 
-[node name="ObjectSelectionBackground" type="ColorRect" parent="CanvasLayer"]
+[node name="ObjectSelectionBackground" type="ColorRect" parent="CanvasLayer" unique_id=763657567]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
@@ -260,7 +259,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0, 0, 0, 1)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/ObjectSelectionBackground"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/ObjectSelectionBackground" unique_id=1994495497]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.073
@@ -270,14 +269,14 @@ offset_top = -605.843
 offset_bottom = -35.843
 vertical_scroll_mode = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ObjectSelectionBackground/ScrollContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ObjectSelectionBackground/ScrollContainer" unique_id=1428640533]
 layout_mode = 2
 size_flags_horizontal = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 2
 alignment = 2
 
-[node name="TileSelectionBackground" type="ColorRect" parent="CanvasLayer"]
+[node name="TileSelectionBackground" type="ColorRect" parent="CanvasLayer" unique_id=1806166174]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
@@ -289,7 +288,7 @@ grow_vertical = 0
 size_flags_horizontal = 3
 color = Color(0, 0, 0, 1)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/TileSelectionBackground"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/TileSelectionBackground" unique_id=2142802881]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.121
@@ -300,13 +299,13 @@ offset_bottom = -35.937
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="Container" type="HFlowContainer" parent="CanvasLayer/TileSelectionBackground/ScrollContainer"]
+[node name="Container" type="HFlowContainer" parent="CanvasLayer/TileSelectionBackground/ScrollContainer" unique_id=104029950]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 1
 theme_override_constants/v_separation = 1
 
-[node name="StatusBar" type="ColorRect" parent="CanvasLayer"]
+[node name="StatusBar" type="ColorRect" parent="CanvasLayer" unique_id=1416402455]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
@@ -316,7 +315,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0, 0, 0, 1)
 
-[node name="StatusLabel" type="Label" parent="CanvasLayer/StatusBar"]
+[node name="StatusLabel" type="Label" parent="CanvasLayer/StatusBar" unique_id=1207728033]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0
@@ -326,7 +325,7 @@ offset_top = -31.0
 offset_right = 448.0
 offset_bottom = -8.0
 
-[node name="PageInfoLabel" type="Label" parent="CanvasLayer/StatusBar"]
+[node name="PageInfoLabel" type="Label" parent="CanvasLayer/StatusBar" unique_id=1729036410]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
@@ -339,7 +338,7 @@ offset_right = -150.0
 offset_bottom = -8.0
 horizontal_alignment = 2
 
-[node name="PreviousTile" type="TextureButton" parent="CanvasLayer/StatusBar"]
+[node name="PreviousTile" type="TextureButton" parent="CanvasLayer/StatusBar" unique_id=2112222800]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -357,7 +356,7 @@ texture_pressed = ExtResource("7_a5a15")
 texture_hover = ExtResource("19_1cfy8")
 texture_disabled = ExtResource("12_vdrt2")
 
-[node name="GoToPage" type="TextureButton" parent="CanvasLayer/StatusBar"]
+[node name="GoToPage" type="TextureButton" parent="CanvasLayer/StatusBar" unique_id=58760112]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -375,7 +374,7 @@ texture_pressed = ExtResource("30_d6ws0")
 texture_hover = ExtResource("31_svl66")
 texture_disabled = ExtResource("32_gmerm")
 
-[node name="NextTile" type="TextureButton" parent="CanvasLayer/StatusBar"]
+[node name="NextTile" type="TextureButton" parent="CanvasLayer/StatusBar" unique_id=1669338193]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
@@ -391,7 +390,7 @@ texture_pressed = ExtResource("8_28ygm")
 texture_hover = ExtResource("22_c3cgk")
 texture_disabled = ExtResource("14_jligr")
 
-[node name="HidePanel" type="TextureButton" parent="CanvasLayer/StatusBar"]
+[node name="HidePanel" type="TextureButton" parent="CanvasLayer/StatusBar" unique_id=1269075008]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -409,10 +408,10 @@ texture_pressed = ExtResource("11_s3tua")
 texture_hover = ExtResource("16_ggb22")
 texture_disabled = ExtResource("12_daljj")
 
-[node name="SettingsMenu" parent="CanvasLayer" instance=ExtResource("33_sij56")]
+[node name="SettingsMenu" parent="CanvasLayer" unique_id=394747756 instance=ExtResource("33_sij56")]
 visible = false
 
-[node name="GoToPageMenu" parent="CanvasLayer" instance=ExtResource("37_svl66")]
+[node name="GoToPageMenu" parent="CanvasLayer" unique_id=766651972 instance=ExtResource("37_svl66")]
 visible = false
 
 [connection signal="canceled" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_canceled"]

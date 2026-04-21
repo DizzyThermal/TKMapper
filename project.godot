@@ -25,8 +25,9 @@ config/icon="res://icon.png"
 
 Database="*res://Resources/Database.gd"
 Resources="*res://Resources/Resources.gd"
+FrameCache="*uid://cdukhi5yx3g7c"
+Renderers="*uid://22ic1cf1qj8f"
 MapperState="*res://Resources/MapperState.gd"
-Renderers="*res://Resources/Renderers.gd"
 Debug="*res://Resources/Debug.gd"
 
 [debug]

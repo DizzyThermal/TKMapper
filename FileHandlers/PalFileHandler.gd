@@ -53,9 +53,7 @@ func _init(file):
 			print("            DEBUG: Palette Unknown Bytes 2: ", palette.unknown_bytes_2)
 		palettes.append(palette)
 
-func get_palette(palette_index, set_alpha=255) -> Palette:
+func get_palette(palette_index) -> Palette:
 	var palette: Palette = palettes[palette_index] if palette_index < len(palettes) else null
-	if palette and set_alpha:
-		palette.set_alpha(set_alpha)
 
 	return palette

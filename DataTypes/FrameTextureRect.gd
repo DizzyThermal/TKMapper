@@ -15,7 +15,7 @@ func _init(
 	if not FrameCache.has_item(frame_key):
 		if frame.width > 0 and frame.height > 0:
 			var palette_animation_count: int = min(16, len(palette.animation_ranges))
-			var index_texture: ImageTexture = NTK_Renderer.get_index_texture(frame)
+			var index_texture: ImageTexture = NTK_Renderer.create_index_texture(frame)
 			var mask_texture: ImageTexture = ImageTexture.create_from_image(frame.mask_image) if frame.mask_image != null else null
 			var palette_texture: ImageTexture = NTK_Renderer.create_palette_texture(palette)
 			var shader_material: ShaderMaterial = ShaderMaterial.new()
@@ -47,7 +47,7 @@ func _init(
 		self.texture = cache_item.index_texture
 		self.material = cache_item.frame_shader
 
-func _process(delta):
+func _process(_delta: float) -> void:
 	if MapperState.palette_animation_tick != self.palette_animation_last_tick \
 			and self.is_animated:
 		self.palette_animation_last_tick = MapperState.palette_animation_tick

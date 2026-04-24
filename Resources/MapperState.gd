@@ -29,6 +29,9 @@ var elapsed_time := 0.0
 var palette_animation_tick_rate := 28
 var palette_animation_tick := 0
 
+var cursor_animation_tick_rate := 14
+var cursor_animation_tick := 0
+
 func _process(delta) -> void:
 	# Update Tick
 	elapsed_time += delta * 1000
@@ -37,4 +40,6 @@ func _process(delta) -> void:
 		tick += 1
 		if tick % palette_animation_tick_rate == 0:
 			palette_animation_tick += 1
+		if tick % cursor_animation_tick_rate == 0:
+			cursor_animation_tick += 1
 		tick_cooldown = 1 / float(tick_rate)

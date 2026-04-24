@@ -44,11 +44,11 @@ func get_map_name(map_path: String) -> String:
 func _load_map(map_path: String):
 	cmp = CmpFileHandler.new(map_path)
 
-func render_map(parent: Node2D, map_path: String, render_objects: bool) -> void:
+func render_map(map_path: String, render_objects: bool) -> void:
 	_load_map(map_path)
-	render_map_cropped(parent, map_path, 0, 0, cmp.width, cmp.height, render_objects)
+	render_map_cropped(map_path, 0, 0, cmp.width, cmp.height, render_objects)
 
-func render_map_cropped(parent: Node2D, map_path: String, x: int, y: int, width: int, height: int, render_objects: bool=true) -> void:
+func render_map_cropped(map_path: String, x: int, y: int, width: int, height: int, render_objects: bool=true) -> void:
 	self.clear_map()
 
 	var start_time := Time.get_ticks_msec()

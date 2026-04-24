@@ -4,8 +4,9 @@ const NTK_Frame = preload("res://DataTypes/NTK_Frame.gd")
 
 # State Variables
 var cursor_map_renderer: NTK_MapRenderer = null
-var cursor_renderer: NTK_CursorRenderer = null
-var cursor_state := "Idle"
+var cursor: NTK_Cursor = NTK_Cursor.new()
+var cursor_state: NTK_Cursor.CursorState = NTK_Cursor.CursorState.IDLE
+var cursor_sprite: FrameSprite = null
 
 var cursor_tile := Sprite2D.new()
 var cursor_rect := Rect2(Vector2i.ZERO, Resources.tile_size_vector)
@@ -89,11 +90,14 @@ var thread_ids: Array[int] = []
 var map_renderer: NTK_MapRenderer
 
 var initialized: bool = false
+var cursor_animation_last_tick: int = 0
+var cursor_animation_last_state: NTK_Cursor.CursorState = NTK_Cursor.CursorState.IDLE
 
 func initialize() -> void:
 	Renderers.map_renderer.tiles = tiles
 	Renderers.map_renderer.objects = objects
 
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	self.cursor_map_renderer = NTK_MapRenderer.new()
 	self.cursor_map_renderer.tiles = cursor_tiles
 	self.cursor_map_renderer.objects = cursor_objects
@@ -102,7 +106,7 @@ func initialize() -> void:
 	settings_menu.set_parent(self)
 	goto_page.set_parent(self)
 
-	cursor_renderer = NTK_CursorRenderer.new()
+	#cursor = NTK_Cursor.new()
 	file_dialog.access = FileDialog.Access.ACCESS_FILESYSTEM
 	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
 	var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))
@@ -126,9 +130,9 @@ func initialize() -> void:
 				current_tile_index = map_tiles[y][x]["ab_index"]
 	if current_tile_index > 0:
 		var palette_index: int = Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
-		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
-		if tile_image.get_width() > 0 \
-				and tile_image.get_height() > 0:
+		var frame: NTK_Frame = Renderers.map_renderer.tile_renderer.get_frame(current_tile_index)
+		if frame.width > 0 \
+				and frame.height > 0:
 			map_copy_tiles.append([])
 			map_copy_tiles[0].append({
 				"ab_index": current_tile_index,
@@ -426,7 +430,7 @@ func _process(delta):
 		and not MapperState.is_erase_mode
 
 	if Input.is_key_pressed(KEY_CTRL) or Input.is_action_pressed("move-map"):
-		cursor_state = "Grab"
+		cursor_state = NTK_Cursor.CursorState.GRAB
 		grabbing_map = true
 		cursor_tile.visible = false
 		cursor_preview.visible = false
@@ -436,12 +440,12 @@ func _process(delta):
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = true
-		cursor_state = "Attack"
+		cursor_state = NTK_Cursor.CursorState.ATTACK
 	elif mode == MapMode.UNPASSABLE:
 		cursor_tile.visible = true
 		cursor_preview.visible = false
 		target_box.visible = false
-		cursor_state = "Idle"
+		cursor_state = NTK_Cursor.CursorState.IDLE
 	elif Input.is_key_pressed(KEY_ALT):
 		set_target_box_color(Color.CYAN)
 		if start_copy_position == Vector2i(-1, -1) \
@@ -450,7 +454,7 @@ func _process(delta):
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = true
-		cursor_state = "Select"
+		cursor_state = NTK_Cursor.CursorState.SELECT
 	else:
 		set_target_box_color(Color.GREEN)
 		if mode == MapMode.UNPASSABLE:
@@ -460,7 +464,7 @@ func _process(delta):
 			cursor_tile.visible = false
 			cursor_preview.visible = true
 		target_box.visible = true
-		cursor_state = "Idle"
+		cursor_state = NTK_Cursor.CursorState.IDLE
 	
 	# Copy Multiple (Done on Release of ALT + RMB)
 	if not MapperState.copying_multiple \
@@ -499,9 +503,7 @@ func _process(delta):
 
 		start_copy_position = Vector2i(-1, -1)
 
-	# Update Cursor
-	if cursor_state in cursor_renderer.cursors:
-		Input.set_custom_mouse_cursor(cursor_renderer.cursors[cursor_state].get_frame_texture(cursor_renderer.cursors[cursor_state].current_frame), Input.CURSOR_ARROW, Vector2(0, 0))
+	update_mouse_cursor()
 
 	# Change Tile on Left Mouse Button (LMB) - Insert Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
@@ -593,7 +595,7 @@ func _process(delta):
 	# Copy Tile on Right Mouse Button (RMB) - Insert Mode
 	if Input.is_action_just_pressed("copy-tile") and \
 			not Input.is_key_pressed(KEY_ALT) and \
-			cursor_state == "Idle" and \
+			cursor_state == NTK_Cursor.CursorState.IDLE and \
 			mouse_over_tile_map() and \
 			not MapperState.copying_multiple and \
 			not MapperState.menu_open:
@@ -717,7 +719,7 @@ func clear_map() -> void:
 
 func load_map(map_path: String) -> void:
 	clear_map()
-	Renderers.map_renderer.render_map(self, map_path, true)
+	Renderers.map_renderer.render_map(map_path, true)
 	map_tiles.clear()
 	for y in range(256):
 		map_tiles.append([])
@@ -1014,6 +1016,18 @@ func erase_unpassable_tile(coordinate: Vector2i, add_to_undo_stack: bool=true) -
 			undo_button.disabled = false
 	map_tiles[coordinate.y][coordinate.x]["unpassable"] = false
 
+func update_mouse_cursor() -> void:
+	if MapperState.cursor_animation_tick != self.cursor_animation_last_tick or \
+			self.cursor_state != self.cursor_animation_last_state:
+		self.cursor_animation_last_tick = MapperState.palette_animation_tick
+		self.cursor_animation_last_state = self.cursor_state
+		if self.cursor_sprite != null:
+			self.cursor_sprite.free()
+			self.cursor_sprite = null
+		self.cursor_sprite = cursor.get_cursor_frame_sprite(self.cursor_state)
+		self.cursor_sprite.position = get_global_mouse_position()
+		add_child(self.cursor_sprite)
+
 func update_cursor_preview(index: int) -> void:
 	map_copy_tiles.clear()
 	map_copy_tiles.append([])
@@ -1022,9 +1036,9 @@ func update_cursor_preview(index: int) -> void:
 			and index > 0:
 		current_tile_index = index
 		var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
-		var tile_image: Image = Renderers.map_renderer.tile_renderer.render_frame(current_tile_index, palette_index)
-		if tile_image.get_width() > 0 \
-				and tile_image.get_height() > 0:
+		var frame: NTK_Frame = Renderers.map_renderer.tile_renderer.get_frame(current_tile_index)
+		if frame.width > 0 \
+				and frame.height > 0:
 			map_copy_tiles[0].append({
 				"ab_index": current_tile_index,
 				"sobj_index": -10,
@@ -1054,11 +1068,6 @@ func clear_container(container: Container) -> void:
 			item.queue_free()
 			item = null
 
-func render_tile(thread_tile_index: int) -> void:
-	var tile_index: int = thread_ids[thread_tile_index]
-	var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[tile_index]
-	Renderers.map_renderer.tile_renderer.render_frame(tile_index, palette_index)
-
 func load_tileset(start_page: int=0) -> void:
 	var tile_count: int = int(tile_page_size_spinbox.value)
 	var start_tile: int = start_page * tile_count
@@ -1066,14 +1075,6 @@ func load_tileset(start_page: int=0) -> void:
 
 	# TODO: Reimplement Prune Cache
 	# var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
-
-	# Collect Unique Tiles
-	thread_ids.clear()
-	thread_ids.append_array(range(max(1, start_tile), end_tile))
-
-	# Threaded Tile Renderering
-	var task_id : int = WorkerThreadPool.add_group_task(render_tile, thread_ids.size(), -1, true)
-	WorkerThreadPool.wait_for_group_task_completion(task_id)
 
 	# Load Tile Selection Area
 	clear_container(tile_set_container)
@@ -1086,34 +1087,15 @@ func load_tileset(start_page: int=0) -> void:
 	var max_tile_pages: int = ceil(max_tile_count / int(tile_page_size_spinbox.value))
 	page_info_label.text = "Tile Page " + str(current_tile_page + 1) + "/" + str(max_tile_pages + 1)
 
-func render_object(thread_object_index: int) -> void:
-	var object_index: int = thread_ids[thread_object_index]
-	Renderers.map_renderer.sobj_renderer.render_object(object_index)
-
 func load_objectset(start_page: int=0) -> void:
 	var object_count: int = int(object_page_size_spinbox.value)
 	var start_object: int = start_page * object_count
 	var end_object = min(start_object + object_count, Renderers.map_renderer.sobj_renderer.sobj.object_count)
 
 	# TODO: Reimplement Prune Cache
-	var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
-	#var images_to_prune: int = len(Renderers.map_renderer.sobj_renderer.tilec_renderer.images) + (object_count * 10) - tile_cache_size
-	#if images_to_prune > 0:
-		#Renderers.map_renderer.sobj_renderer.tilec_renderer.prune_cache(images_to_prune)
+	# var tile_cache_size: int = int(Database.get_config_item_value("tile_cache_size"))
+	# var object_cache_size: int = int(Database.get_config_item_value("object_cache_size"))
 
-	var object_cache_size: int = int(Database.get_config_item_value("object_cache_size"))
-	#var objects_to_prune: int = len(Renderers.map_renderer.sobj_renderer.object_images) + object_count - object_cache_size
-	#if objects_to_prune > 0:
-		#Renderers.map_renderer.sobj_renderer.prune_cache(objects_to_prune)
-
-	# Collect Unique Objects
-	thread_ids.clear()
-	thread_ids.append_array(range(start_object, end_object))
-	
-	# Threaded Tile Renderering
-	var task_id : int = WorkerThreadPool.add_group_task(render_object, thread_ids.size(), -1, true)
-	WorkerThreadPool.wait_for_group_task_completion(task_id)
-	
 	# Load Object Selection Area
 	clear_container(object_set_container)
 	for i in range(start_object, end_object - 1):

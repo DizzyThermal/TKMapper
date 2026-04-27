@@ -24,7 +24,7 @@ func _init():
 	self.cursor_renderer.pal = PalFileHandler.new(bint0_dat.get_file("CURSOR02.pal"))
 
 func get_cursor_frame_sprite(cursor_state: CursorState) -> FrameSprite:
-	var cursor_frame_index: int = (MapperState.cursor_animation_tick % cursor_frame_count) + (int(cursor_state) * cursor_frame_count)
+	var cursor_frame_index: int = (GameState.cursor_animation_tick % cursor_frame_count) + (int(cursor_state) * cursor_frame_count)
 	var frame: NTK_Frame = self.cursor_renderer.get_frame(cursor_frame_index)
 	var palette: Palette = self.cursor_renderer.pal.get_palette(0)
 	var frame_key: String = "-".join(["Cursor", cursor_frame_index])

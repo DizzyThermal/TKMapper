@@ -156,138 +156,138 @@ func initialize() -> void:
 
 	# Connect Signals
 	## Viewport
-	get_viewport().connect("mouse_entered", func(): MapperState.over_window = true)
-	get_viewport().connect("mouse_exited", func(): MapperState.over_window = false)
+	get_viewport().connect("mouse_entered", func(): GameState.over_window = true)
+	get_viewport().connect("mouse_exited", func(): GameState.over_window = false)
 
 	## Title Bar
 	title_bar.connect("mouse_entered", func(): 
-		MapperState.over_title_bar = true
-		MapperState.over_title_label = true
+		GameState.over_title_bar = true
+		GameState.over_title_label = true
 	)
 	title_bar.connect("mouse_exited", func(): 
-		MapperState.over_title_bar = false
-		MapperState.over_title_label = false
+		GameState.over_title_bar = false
+		GameState.over_title_label = false
 	)
 	
-	title_label.connect("mouse_entered", func(): MapperState.over_title_label = true)
-	title_label.connect("mouse_exited", func(): MapperState.over_title_label = false)
+	title_label.connect("mouse_entered", func(): GameState.over_title_label = true)
+	title_label.connect("mouse_exited", func(): GameState.over_title_label = false)
 
 	load_map_button.connect("mouse_entered", func(): 
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Load Map (L)", load_map_button.global_position + Vector2(10, 42))
 	)
 	load_map_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	save_map_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Save Map (S)", save_map_button.global_position + Vector2(-24, 42))
 	)
 	save_map_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	tile_mode_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Tile Mode (T)", tile_mode_button.global_position + Vector2(-32, 42))
 	)
 	tile_mode_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	object_mode_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Object Mode (O)", object_mode_button.global_position + Vector2(-42, 42))
 	)
 	object_mode_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	unpassable_mode_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Unpassable Mode (P)", unpassable_mode_button.global_position + Vector2(-64, 42))
 	)
 	unpassable_mode_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	hide_objects_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Hide Objects (H)", hide_objects_button.global_position + Vector2(-38, 42))
 	)
 	hide_objects_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	undo_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Undo (U)", undo_button.global_position + Vector2(-16, 42))
 	)
 	undo_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 	
 	settings_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Settings", settings_button.global_position + Vector2(-36, 42))
 	)
 	settings_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	## Selection Area
-	tile_selection_area.connect("mouse_entered", func(): MapperState.over_selection_area = true)
-	tile_selection_area.connect("mouse_exited", func(): MapperState.over_selection_area = false)
+	tile_selection_area.connect("mouse_entered", func(): GameState.over_selection_area = true)
+	tile_selection_area.connect("mouse_exited", func(): GameState.over_selection_area = false)
 
-	object_selection_area.connect("mouse_entered", func(): MapperState.over_selection_area = true)
-	object_selection_area.connect("mouse_exited", func(): MapperState.over_selection_area = false)
+	object_selection_area.connect("mouse_entered", func(): GameState.over_selection_area = true)
+	object_selection_area.connect("mouse_exited", func(): GameState.over_selection_area = false)
 
 	## Status Bar
-	status_bar.connect("mouse_entered", func(): MapperState.over_status_bar = true)
-	status_bar.connect("mouse_exited", func(): MapperState.over_status_bar = false)
+	status_bar.connect("mouse_entered", func(): GameState.over_status_bar = true)
+	status_bar.connect("mouse_exited", func(): GameState.over_status_bar = false)
 
-	page_info_label.connect("mouse_entered", func(): MapperState.over_status_bar = true)
-	page_info_label.connect("mouse_exited", func(): MapperState.over_status_bar = false)
+	page_info_label.connect("mouse_entered", func(): GameState.over_status_bar = true)
+	page_info_label.connect("mouse_exited", func(): GameState.over_status_bar = false)
 
 	prev_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Previous Page (←)", prev_button.global_position + Vector2(-48, -30))
 	)
 	prev_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	goto_page_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Goto Page (G)", goto_page_button.global_position + Vector2(-50, -30))
 	)
 	goto_page_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	next_button.connect("mouse_entered", func():
-		MapperState.over_button = true
+		GameState.over_button = true
 		update_tool_tip("Next Page (→)", next_button.global_position + Vector2(-56, -30))
 	)
 	next_button.connect("mouse_exited", func():
-		MapperState.over_button = false
+		GameState.over_button = false
 		update_tool_tip("")
 	)
 
 	hide_panel_button.connect("mouse_entered", func():
-		MapperState.over_button = true
-		MapperState.over_toggle_selection_area_button = true
+		GameState.over_button = true
+		GameState.over_toggle_selection_area_button = true
 		var verb := "Hide" if tile_selection_area.visible or object_selection_area.visible else "Show"
 		var selection_area := "Tile Panel" if mode == MapMode.TILE else "Object Panel"
 		var shortcut := "(↓)" if verb == "Hide" else "(↑)"
@@ -297,8 +297,8 @@ func initialize() -> void:
 		)
 	)
 	hide_panel_button.connect("mouse_exited", func():
-		MapperState.over_button = false
-		MapperState.over_toggle_selection_area_button = false
+		GameState.over_button = false
+		GameState.over_toggle_selection_area_button = false
 		update_tool_tip("")
 	)
 
@@ -327,92 +327,92 @@ func _process(delta):
 
 	# Load / Save Map
 	if Input.is_action_just_pressed("load-map") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_load_map()					# L
 	elif Input.is_action_just_pressed("save-map") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_save_map()					# S
 
 	# Mode Switches
 	if Input.is_action_just_pressed("toggle-mode") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		change_map_mode()							# M
 	elif Input.is_action_just_pressed("mode-tile") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		change_to_tile_mode(current_tile_page)		# T
 	elif Input.is_action_just_pressed("mode-object") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		change_to_object_mode(current_object_page)	# O
 	elif Input.is_action_just_pressed("mode-unpassable") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		change_to_unpassable_mode()					# P
 
 	# Toggle Objects
 	if Input.is_action_just_pressed("toggle-objects") \
-			and not MapperState.menu_open:
+			and not GameState.menu_open:
 		_toggle_hide_objects()
 
 	# Undo Tile
 	if Input.is_action_just_pressed("undo") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		undo()
 
 	# Toggle Insert / Erase Modes
 	if Input.is_action_just_pressed("insert-mode") and \
-			not MapperState.menu_open:
-		MapperState.is_erase_mode = false		# I
+			not GameState.menu_open:
+		GameState.is_erase_mode = false		# I
 		target_box.size = previous_target_box_size
 	elif Input.is_action_just_pressed("erase-mode") and \
-			not MapperState.menu_open:
-		MapperState.is_erase_mode = true		# D | E | X
+			not GameState.menu_open:
+		GameState.is_erase_mode = true		# D | E | X
 		previous_target_box_size = target_box.size
 		target_box.size = Resources.tile_size_vector
 
 	# Page Switching
 	if Input.is_action_just_pressed("next-page") and \
 			not Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_next_page()
 	elif Input.is_action_just_pressed("goto-page") and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_on_go_to_page_pressed()
 	elif Input.is_action_just_pressed("previous-page") and \
 			not Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_prev_page()
 	elif Input.is_action_just_pressed("show-selection-area") and \
 			not Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_toggle_selection_area(true, true)
 	elif Input.is_action_just_pressed("hide-selection-area") and \
 			not Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		_toggle_selection_area(true, false)
 
 	# Map Shifting
 	if Input.is_action_just_pressed("shift-map-up") and \
 			Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.shifting and \
-			not MapperState.menu_open:
-		MapperState.shifting = true
+			not GameState.shifting and \
+			not GameState.menu_open:
+		GameState.shifting = true
 		shift_map(Resources.Direction.UP)
 	elif Input.is_action_just_pressed("shift-map-right") and \
 			Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.shifting and \
-			not MapperState.menu_open:
-		MapperState.shifting = true
+			not GameState.shifting and \
+			not GameState.menu_open:
+		GameState.shifting = true
 		shift_map(Resources.Direction.RIGHT)
 	elif Input.is_action_just_pressed("shift-map-down") and \
 			Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.shifting and \
-			not MapperState.menu_open:
-		MapperState.shifting = true
+			not GameState.shifting and \
+			not GameState.menu_open:
+		GameState.shifting = true
 		shift_map(Resources.Direction.DOWN)
 	elif Input.is_action_just_pressed("shift-map-left") and \
 			Input.is_key_pressed(KEY_SHIFT) and \
-			not MapperState.shifting and \
-			not MapperState.menu_open:
-		MapperState.shifting = true
+			not GameState.shifting and \
+			not GameState.menu_open:
+		GameState.shifting = true
 		shift_map(Resources.Direction.LEFT)
 
 	# Cursor
@@ -422,12 +422,12 @@ func _process(delta):
 	var grabbing_map := false
 	
 	# ALT + RMB (Right Mouse Button)
-	MapperState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
+	GameState.copying_multiple = Input.is_key_pressed(KEY_ALT) \
 		and (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or \
 			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) \
 		and mode != MapMode.UNPASSABLE \
 		and mouse_over_tile_map() \
-		and not MapperState.is_erase_mode
+		and not GameState.is_erase_mode
 
 	if Input.is_key_pressed(KEY_CTRL) or Input.is_action_pressed("move-map"):
 		cursor_state = NTK_Cursor.CursorState.GRAB
@@ -435,7 +435,7 @@ func _process(delta):
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = false
-	elif MapperState.is_erase_mode:
+	elif GameState.is_erase_mode:
 		set_target_box_color(Color.RED)
 		cursor_tile.visible = false
 		cursor_preview.visible = false
@@ -449,7 +449,7 @@ func _process(delta):
 	elif Input.is_key_pressed(KEY_ALT):
 		set_target_box_color(Color.CYAN)
 		if start_copy_position == Vector2i(-1, -1) \
-				and MapperState.copying_multiple:
+				and GameState.copying_multiple:
 			start_copy_position = snapped_mouse_position
 		cursor_tile.visible = false
 		cursor_preview.visible = false
@@ -467,7 +467,7 @@ func _process(delta):
 		cursor_state = NTK_Cursor.CursorState.IDLE
 	
 	# Copy Multiple (Done on Release of ALT + RMB)
-	if not MapperState.copying_multiple \
+	if not GameState.copying_multiple \
 			and start_copy_position != Vector2i(-1, -1):
 		var copy_dims: Vector2i = Vector2i(
 			target_box.size.x / Resources.tile_size,
@@ -509,29 +509,29 @@ func _process(delta):
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
 			not Input.is_action_pressed("move-map") and \
 			not Input.is_key_pressed(KEY_ALT) and \
-			not MapperState.is_erase_mode and \
+			not GameState.is_erase_mode and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open and \
-			not MapperState.copying_multiple and \
+			not GameState.menu_open and \
+			not GameState.copying_multiple and \
 			coordinate_on_map(mouse_coordinate):
 		paste_cursor_preview(mouse_coordinate)
 		
-		if mouse_coordinate.x + len(map_copy_tiles[0]) > MapperState.map_size.x:
-			MapperState.map_size.x = mouse_coordinate.x + len(map_copy_tiles[0])
-		if mouse_coordinate.y + len(map_copy_tiles) > MapperState.map_size.y:
-			MapperState.map_size.y = mouse_coordinate.y + len(map_copy_tiles)
-		map_bounds_box.size = Vector2i(MapperState.map_size.x, MapperState.map_size.y) * Resources.tile_size
+		if mouse_coordinate.x + len(map_copy_tiles[0]) > GameState.map_size.x:
+			GameState.map_size.x = mouse_coordinate.x + len(map_copy_tiles[0])
+		if mouse_coordinate.y + len(map_copy_tiles) > GameState.map_size.y:
+			GameState.map_size.y = mouse_coordinate.y + len(map_copy_tiles)
+		map_bounds_box.size = Vector2i(GameState.map_size.x, GameState.map_size.y) * Resources.tile_size
 
 	# Copy Tile(s) from Selection Area (LMB/RMB) - Start Trigger
 	if (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or \
 			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
 			not Input.is_action_pressed("move-map") and \
 			not Input.is_key_pressed(KEY_ALT) and \
-			not MapperState.is_erase_mode and \
+			not GameState.is_erase_mode and \
 			not mouse_over_tile_map() and \
-			MapperState.over_selection_area and \
-			not MapperState.menu_open and \
-			not MapperState.copying_multiple and \
+			GameState.over_selection_area and \
+			not GameState.menu_open and \
+			not GameState.copying_multiple and \
 			start_selection_position == -1:
 		if mode == MapMode.TILE:
 			start_selection_position = self.hover_tile_index
@@ -542,11 +542,11 @@ func _process(delta):
 				not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
 			not Input.is_action_pressed("move-map") and \
 			not Input.is_key_pressed(KEY_ALT) and \
-			not MapperState.is_erase_mode and \
+			not GameState.is_erase_mode and \
 			not mouse_over_tile_map() and \
-			MapperState.over_selection_area and \
-			not MapperState.menu_open and \
-			not MapperState.copying_multiple and \
+			GameState.over_selection_area and \
+			not GameState.menu_open and \
+			not GameState.copying_multiple and \
 			not start_selection_position == -1:
 		map_copy_tiles.clear()
 		map_copy_tiles.append([])
@@ -578,10 +578,10 @@ func _process(delta):
 			Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)) and \
 			not Input.is_key_pressed(KEY_ALT) and \
 			not Input.is_action_pressed("move-map") and \
-			MapperState.is_erase_mode and \
+			GameState.is_erase_mode and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open and \
-			not MapperState.copying_multiple and \
+			not GameState.menu_open and \
+			not GameState.copying_multiple and \
 			coordinate_on_map(mouse_coordinate):
 		if mode == MapMode.TILE:
 			erase_tile(mouse_coordinate)
@@ -590,15 +590,15 @@ func _process(delta):
 		elif mode == MapMode.UNPASSABLE:
 			erase_unpassable_tile(mouse_coordinate)
 
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 	# Copy Tile on Right Mouse Button (RMB) - Insert Mode
 	if Input.is_action_just_pressed("copy-tile") and \
 			not Input.is_key_pressed(KEY_ALT) and \
 			cursor_state == NTK_Cursor.CursorState.IDLE and \
 			mouse_over_tile_map() and \
-			not MapperState.copying_multiple and \
-			not MapperState.menu_open:
+			not GameState.copying_multiple and \
+			not GameState.menu_open:
 		var cursor_tile_coord := get_global_mouse_position()
 		cursor_tile_coord.x = floor(cursor_tile_coord.x / Resources.tile_size)
 		cursor_tile_coord.y = floor(cursor_tile_coord.y / Resources.tile_size)
@@ -625,8 +625,8 @@ func _process(delta):
 			mouse_position.y >= 4 and \
 			not grabbing_map and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open:
-		if MapperState.copying_multiple:
+			not GameState.menu_open:
+		if GameState.copying_multiple:
 			var real_start_x: int = min(start_copy_position.x, snapped_mouse_position.x)
 			var real_start_y: int = min(start_copy_position.y, snapped_mouse_position.y)
 			var real_end_x: int = max(start_copy_position.x, snapped_mouse_position.x)
@@ -649,7 +649,7 @@ func _process(delta):
 		#print("mouse_position.y >= 4 :: ", mouse_position.y >= 4)
 		#print("not grabbing_map :: ", not grabbing_map)
 		#print("mouse_over_tile_map() :: ", mouse_over_tile_map())
-		#print("not MapperState.menu_open :: ", not MapperState.menu_open)
+		#print("not GameState.menu_open :: ", not GameState.menu_open)
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = false
@@ -657,7 +657,7 @@ func _process(delta):
 	if Input.is_action_just_pressed("zoom-in") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		camera.position = get_global_mouse_position()
 		if camera.zoom.x < camera.max_zoom:
 			camera.zoom.x *= camera.zoom_step
@@ -666,18 +666,18 @@ func _process(delta):
 	if Input.is_action_just_pressed("zoom-out") and \
 			not Input.is_key_pressed(KEY_CTRL) and \
 			mouse_over_tile_map() and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		if camera.zoom.x > camera.min_zoom:
 			camera.zoom.x /= camera.zoom_step
 		if camera.zoom.y > camera.min_zoom:
 			camera.zoom.y /= camera.zoom_step
 
 	if mouse_over_tile_map() and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		var info_tile_index = "ERROR" # Renderers.map_renderer.update_tile(0, mouse_coordinate)
 		status_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
 	elif not mouse_over_tile_map() and \
-			not MapperState.menu_open:
+			not GameState.menu_open:
 		if mode == MapMode.TILE:
 			status_label.text = "Tile Index: " + str(self.hover_tile_index)
 		elif mode == MapMode.OBJECT:
@@ -693,12 +693,12 @@ func update_tool_tip(
 	tool_tip_label.visible = true if len(tool_tip_text) > 0 else false
 
 func mouse_over_tile_map() -> bool:
-	return	MapperState.over_window and \
-			not MapperState.over_button and \
-			not MapperState.over_title_bar and \
-			not MapperState.over_title_label and \
-			not MapperState.over_selection_area and \
-			not MapperState.over_status_bar
+	return	GameState.over_window and \
+			not GameState.over_button and \
+			not GameState.over_title_bar and \
+			not GameState.over_title_label and \
+			not GameState.over_selection_area and \
+			not GameState.over_status_bar
 
 func coordinate_on_map(coordinate: Vector2i) -> bool:
 	return coordinate.x >= 0 and \
@@ -752,8 +752,8 @@ func load_map(map_path: String) -> void:
 			map_unpassables[Vector2i(x, y)] = unpassable_sprite
 	undo_stack.clear()
 	undo_button.disabled = true
-	MapperState.map_size = Vector2i(Renderers.map_renderer.cmp.width, Renderers.map_renderer.cmp.height)
-	map_bounds_box.size = MapperState.map_size * Resources.tile_size
+	GameState.map_size = Vector2i(Renderers.map_renderer.cmp.width, Renderers.map_renderer.cmp.height)
+	map_bounds_box.size = GameState.map_size * Resources.tile_size
 	
 	camera.position = Vector2(-1000, 400)
 	title_label.text = map_path.split("/")[-1].replace(".cmp", "")
@@ -796,8 +796,8 @@ func shift_map(direction: Resources.Direction) -> void:
 	var previous_object_index: int = current_object_index
 	if direction == Resources.Direction.UP:
 		# Shift Content Up
-		for y in range(MapperState.map_size.y):
-			for x in range(MapperState.map_size.x):
+		for y in range(GameState.map_size.y):
+			for x in range(GameState.map_size.x):
 				if y > 0:
 					# Tile
 					current_tile_index = map_tiles[y][x]["ab_index"]
@@ -815,18 +815,18 @@ func shift_map(direction: Resources.Direction) -> void:
 					else:
 						erase_unpassable_tile(Vector2i(x, y - 1), false)
 					
-		# Remove Content on X = MapperState.map_size.y - 1
-		for x in range(MapperState.map_size.x):
-			erase_tile(Vector2i(x, MapperState.map_size.y - 1), false)
-			erase_object(Vector2i(x, MapperState.map_size.y - 1), false)
-			erase_unpassable_tile(Vector2i(x, MapperState.map_size.y - 1), false)
+		# Remove Content on X = GameState.map_size.y - 1
+		for x in range(GameState.map_size.x):
+			erase_tile(Vector2i(x, GameState.map_size.y - 1), false)
+			erase_object(Vector2i(x, GameState.map_size.y - 1), false)
+			erase_unpassable_tile(Vector2i(x, GameState.map_size.y - 1), false)
 
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 	elif direction == Resources.Direction.RIGHT:
 		# Shift Content Right
-		for y in range(MapperState.map_size.y):
-			for x in range(MapperState.map_size.x, -1, -1):
+		for y in range(GameState.map_size.y):
+			for x in range(GameState.map_size.x, -1, -1):
 				if x < 255:
 					# Tile
 					current_tile_index = map_tiles[y][x]["ab_index"]
@@ -845,17 +845,17 @@ func shift_map(direction: Resources.Direction) -> void:
 						erase_unpassable_tile(Vector2i(x + 1, y), false)
 					
 		# Remove Content on Y = 0
-		for y in range(MapperState.map_size.y):
+		for y in range(GameState.map_size.y):
 			erase_tile(Vector2i(0, y), false)
 			erase_object(Vector2i(0, y), false)
 			erase_unpassable_tile(Vector2i(0, y), false)
 
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 	elif direction == Resources.Direction.DOWN:
 		# Shift Content Down
-		for y in range(MapperState.map_size.y, -1, -1):
-			for x in range(MapperState.map_size.x):
+		for y in range(GameState.map_size.y, -1, -1):
+			for x in range(GameState.map_size.x):
 				if y < 255:
 					# Tile
 					current_tile_index = map_tiles[y][x]["ab_index"]
@@ -874,17 +874,17 @@ func shift_map(direction: Resources.Direction) -> void:
 						erase_unpassable_tile(Vector2i(x, y + 1), false)
 					
 		# Remove Content on X = 0
-		for x in range(MapperState.map_size.x):
+		for x in range(GameState.map_size.x):
 			erase_tile(Vector2i(x, 0), false)
 			erase_object(Vector2i(x, 0), false)
 			erase_unpassable_tile(Vector2i(x, 0), false)
 
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 	elif direction == Resources.Direction.LEFT:
 		# Shift Content Left
-		for y in range(MapperState.map_size.y):
-			for x in range(MapperState.map_size.x):
+		for y in range(GameState.map_size.y):
+			for x in range(GameState.map_size.x):
 				if x > 0:
 					# Tile
 					current_tile_index = map_tiles[y][x]["ab_index"]
@@ -902,18 +902,18 @@ func shift_map(direction: Resources.Direction) -> void:
 					else:
 						erase_unpassable_tile(Vector2i(x - 1, y), false)
 					
-		# Remove Content on Y = MapperState.map_size.x - 1
-		for y in range(MapperState.map_size.y):
-			erase_tile(Vector2i(MapperState.map_size.x - 1, y), false)
-			erase_object(Vector2i(MapperState.map_size.x - 1, y), false)
-			erase_unpassable_tile(Vector2i(MapperState.map_size.x - 1, y), false)
+		# Remove Content on Y = GameState.map_size.x - 1
+		for y in range(GameState.map_size.y):
+			erase_tile(Vector2i(GameState.map_size.x - 1, y), false)
+			erase_object(Vector2i(GameState.map_size.x - 1, y), false)
+			erase_unpassable_tile(Vector2i(GameState.map_size.x - 1, y), false)
 
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 
 	current_tile_index = previous_tile_index
 	current_object_index = previous_object_index
-	MapperState.shifting = false
+	GameState.shifting = false
 
 func insert_tile(coordinate: Vector2i, add_to_undo_stack: bool=true) -> void:
 	if current_tile_index < 0:
@@ -1017,9 +1017,9 @@ func erase_unpassable_tile(coordinate: Vector2i, add_to_undo_stack: bool=true) -
 	map_tiles[coordinate.y][coordinate.x]["unpassable"] = false
 
 func update_mouse_cursor() -> void:
-	if MapperState.cursor_animation_tick != self.cursor_animation_last_tick or \
+	if GameState.cursor_animation_tick != self.cursor_animation_last_tick or \
 			self.cursor_state != self.cursor_animation_last_state:
-		self.cursor_animation_last_tick = MapperState.palette_animation_tick
+		self.cursor_animation_last_tick = GameState.palette_animation_tick
 		self.cursor_animation_last_state = self.cursor_state
 		if self.cursor_sprite != null:
 			self.cursor_sprite.free()
@@ -1111,7 +1111,7 @@ func load_objectset(start_page: int=0) -> void:
 func _load_map():
 	# Select Map to Load
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
-	MapperState.menu_open = true
+	GameState.menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_load_map_pressed():
@@ -1121,7 +1121,7 @@ func _save_map():
 	# Select Map to Save
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
 	file_dialog.current_file = Database.get_config_item_value("last_map_path").split("/")[-1]
-	MapperState.menu_open = true
+	GameState.menu_open = true
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_save_map_pressed():
@@ -1173,10 +1173,10 @@ func _on_file_dialog_file_selected(map_path: String):
 			load_map(map_path)
 			update_last_map_path(map_path)
 	elif file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 
-		Renderers.map_renderer.cmp.update_map(MapperState.map_size.x, MapperState.map_size.y, map_tiles)
+		Renderers.map_renderer.cmp.update_map(GameState.map_size.x, GameState.map_size.y, map_tiles)
 		Renderers.map_renderer.cmp.save_to_file(map_path)
 		update_last_map_path(map_path)
 		load_map(map_path)
@@ -1189,7 +1189,7 @@ func set_menu_closed(delay: float=0.2) -> void:
 	menu_closed_timer.one_shot = true
 	menu_closed_timer.autostart = true
 
-	menu_closed_timer.connect("timeout", func(): MapperState.menu_open = false)
+	menu_closed_timer.connect("timeout", func(): GameState.menu_open = false)
 	
 	add_child(menu_closed_timer)
 
@@ -1209,9 +1209,9 @@ func _on_mode_pressed():
 	change_map_mode()
 
 func _toggle_hide_objects():
-	MapperState.objects_hidden = not MapperState.objects_hidden
-	objects.visible = not MapperState.objects_hidden
-	if MapperState.objects_hidden:
+	GameState.objects_hidden = not GameState.objects_hidden
+	objects.visible = not GameState.objects_hidden
+	if GameState.objects_hidden:
 		hide_objects_button.texture_normal = load("res://Images/eye-crossed.svg")
 		hide_objects_button.texture_pressed = load("res://Images/eye-crossed.svg")
 		hide_objects_button.texture_hover = load("res://Images/eye-crossed-dark.svg")
@@ -1292,8 +1292,8 @@ func undo() -> void:
 					map_unpassables[mouse_coordinate].queue_free()
 					map_unpassables[mouse_coordinate] = null
 				map_tiles[mouse_coordinate.y][mouse_coordinate.x]["unpassable"] = false
-		MapperState.map_size = calculate_map_size()
-		map_bounds_box.size = MapperState.map_size * Resources.tile_size
+		GameState.map_size = calculate_map_size()
+		map_bounds_box.size = GameState.map_size * Resources.tile_size
 
 	if not undo_stack:
 		undo_stack.clear()
@@ -1310,7 +1310,7 @@ func _on_settings_pressed():
 	if not settings_menu.visible:
 		set_menu_closed()
 	else:
-		MapperState.menu_open = true
+		GameState.menu_open = true
 
 func change_to_tile_mode(start_page: int=0) -> void:
 	_toggle_selection_area(true, false)
@@ -1391,7 +1391,7 @@ func _toggle_selection_area(
 		object_selection_area.visible = false
 
 	# Update Hover
-	if MapperState.over_toggle_selection_area_button:
+	if GameState.over_toggle_selection_area_button:
 		var verb := "Hide" if tile_selection_area.visible or object_selection_area.visible else "Show"
 		var selection_area := "Tile Panel" if mode == MapMode.TILE else "Object Panel"
 		var shortcut := "(↓)" if verb == "Hide" else "(↑)"
@@ -1437,7 +1437,7 @@ func _on_go_to_page_pressed():
 	if not goto_page.visible:
 		set_menu_closed()
 	else:
-		MapperState.menu_open = true
+		GameState.menu_open = true
 		var current_page: int = current_tile_page + 1
 		if mode == MapMode.OBJECT:
 			current_page = current_object_page + 1

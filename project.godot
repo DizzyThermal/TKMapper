@@ -27,7 +27,7 @@ Database="*res://Resources/Database.gd"
 Resources="*res://Resources/Resources.gd"
 FrameCache="*uid://cdukhi5yx3g7c"
 Renderers="*uid://22ic1cf1qj8f"
-MapperState="*res://Resources/MapperState.gd"
+GameState="*res://Resources/GameState.gd"
 Debug="*res://Resources/Debug.gd"
 
 [debug]

@@ -17,7 +17,9 @@ var tile_locations: Dictionary[Vector2i, FrameSprite] = {}
 var objects: Node2D
 var object_locations: Dictionary[Vector2i, Node2D] = {}
 
-var mutex: Mutex = Mutex.new()
+var tile_collision: Dictionary[Vector2i, int] = {}
+
+#var mutex: Mutex = Mutex.new()
 
 func _init(src_tiles: Node2D=null, src_objects: Node2D=null):
 	var start_time := Time.get_ticks_msec()
@@ -48,8 +50,12 @@ func render_map(map_path: String, render_objects: bool) -> void:
 	_load_map(map_path)
 	render_map_cropped(map_path, 0, 0, cmp.width, cmp.height, render_objects)
 
-func render_map_cropped(map_path: String, x: int, y: int, width: int, height: int, render_objects: bool=true) -> void:
-	self.clear_map()
+func render_submap(map_path: String, location: Rect2i) -> void:
+	render_map_cropped(map_path, location.position.x, location.position.y, location.size.x, location.size.y, true, true)
+
+func render_map_cropped(map_path: String, x: int, y: int, width: int, height: int, render_objects: bool=true, submap: bool=false) -> void:
+	if not submap:
+		self.clear_map()
 
 	var start_time := Time.get_ticks_msec()
 	_load_map(map_path)
@@ -67,7 +73,7 @@ func render_map_cropped(map_path: String, x: int, y: int, width: int, height: in
 
 	# Create TileMap (Ground)
 	var tilemap_start_time := Time.get_ticks_msec()
-	create_tilemap(x, y, width, height)
+	create_tilemap(x, y, width, height, submap)
 	var map_name: String = get_map_name(map_path)
 	if Debug.debug_renderer_timings:
 		print("[", map_name, "]: Create TileMap: ", Time.get_ticks_msec() - tilemap_start_time, " ms")
@@ -75,7 +81,7 @@ func render_map_cropped(map_path: String, x: int, y: int, width: int, height: in
 	if render_objects:
 		# Create Objects (Static Objects)
 		var objects_start_time := Time.get_ticks_msec()
-		create_objects(x, y, width, height)
+		create_objects(x, y, width, height, submap)
 		if Debug.debug_renderer_timings:
 			print("[", map_name, "]: Create Objects: ", Time.get_ticks_msec() - objects_start_time, " ms")
 	
@@ -132,29 +138,39 @@ func create_tile_texture_rect(ab_index: int, palette_index: int, cache_prefix="t
 
 	return tile_texture_rect
 
-func delete_tile(tile_position: Vector2i) -> void:
-	if tile_position in self.tile_locations:
-		var tile: FrameSprite = self.tile_locations[tile_position]
+func delete_tile(tile_coordinate: Vector2i) -> void:
+	if tile_coordinate in self.tile_locations:
+		var tile: FrameSprite = self.tile_locations[tile_coordinate]
 		if tile != null:
 			tile.queue_free()
-		self.tile_locations.erase(tile_position)
+		self.tile_locations.erase(tile_coordinate)
 
-func update_tile(ab_index: int, tile_position: Vector2i) -> void:
-	delete_tile(tile_position)
+func update_tile(ab_index: int, tile_coordinate: Vector2i) -> void:
+	delete_tile(tile_coordinate)
 	if ab_index > 0:
 		var palette_index: int = tile_renderer.tbl.palette_indices[ab_index]
 		var tile_sprite: FrameSprite = create_tile_sprite(ab_index, palette_index)
-		tile_sprite.position = tile_position * Resources.tile_size_vector
-		self.tile_locations[tile_position] = tile_sprite
+		tile_sprite.position = tile_coordinate * Resources.tile_size_vector
+		self.tile_locations[tile_coordinate] = tile_sprite
 		self.tiles.add_child(tile_sprite)
 
-func create_tilemap(x: int, y: int, width: int, height: int) -> void:
-	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))
-	var end_i: int = min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
+func create_tilemap(x: int, y: int, width: int, height: int, submap: bool=false) -> void:
+	var start_i: int = 0 if submap else max(0, (y * cmp.width) + (x % cmp.width))
+	var end_i: int = len(cmp.tiles) if submap else min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
 	for i in range(start_i, end_i):
 		var ab_index: int = cmp.tiles[i].ab_index
-		var tile_position: Vector2i = Vector2i((i % cmp.width), (i / cmp.width))
-		update_tile(ab_index, tile_position)
+		var tile_coordinate: Vector2i = Vector2i((i % cmp.width), (i / cmp.width))
+		if submap:
+			tile_coordinate += Vector2i(x, y)
+		var frame = tile_renderer.get_frame(ab_index)
+		if ab_index == 0 or \
+				frame.width <= 0 or \
+				frame.height <= 0:
+			continue
+		update_tile(ab_index, tile_coordinate)
+		# Tile Collision
+		if cmp.tiles[i].unpassable_tile:
+			tile_collision[tile_coordinate] = 0xF
 
 func create_tilec_sprite(ab_index: int, palette_index: int, cache_prefix="tilec") -> FrameSprite:
 	var frame: NTK_Frame = sobj_renderer.tilec_renderer.get_frame(ab_index)
@@ -168,13 +184,15 @@ func create_tilec_sprite(ab_index: int, palette_index: int, cache_prefix="tilec"
 
 func create_object_sprite(sobj_index: int) -> Node2D:
 	var object: Node2D = Node2D.new()
+	object.y_sort_enabled = true
 	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
-	var sobj_height := sobj.height
+	var sobj_height: int = sobj.height
 	for idx in range(len(sobj.tile_indices)):
 		var tile_index: int = sobj.tile_indices[idx]
 		var palette_index: int = sobj_renderer.tilec_renderer.tbl.palette_indices[tile_index]
 		var tilec_sprite: FrameSprite = create_tilec_sprite(tile_index, palette_index)
-		tilec_sprite.position = -idx * Vector2i(0, Resources.tile_size)
+		tilec_sprite.y_sort_enabled = true
+		tilec_sprite.offset = -(idx + 1) * Vector2i(0, Resources.tile_size) + tilec_sprite.ntk_frame.pivot
 		object.add_child(tilec_sprite)
 	object.set_meta("sobj_index", sobj_index)
 
@@ -212,32 +230,41 @@ func create_object_texture(sobj_index: int) -> VBoxContainer:
 
 	return container
 
-func delete_object(object_position: Vector2i) -> void:
-	if object_position in self.object_locations:
-		var object: Node2D = self.object_locations[object_position]
+func delete_object(object_coordinate: Vector2i) -> void:
+	if object_coordinate in self.object_locations:
+		var object: Node2D = self.object_locations[object_coordinate]
 		if object != null:
 			object.queue_free()
-		self.object_locations.erase(object_position)
+		self.object_locations.erase(object_coordinate)
 
-func update_object(sobj_index: int, object_position: Vector2i) -> void:
-	delete_object(object_position)
+func update_object(sobj_index: int, object_coordinate: Vector2i) -> void:
+	delete_object(object_coordinate)
 	if sobj_index >= 1:
 		var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
 		var sobj_height := sobj.height
 		if sobj_height >= 1:
 			var object_node: Node2D = create_object_sprite(sobj_index)
-			object_node.position = object_position * Resources.tile_size_vector
-			self.object_locations[object_position] = object_node
+			object_node.position = (object_coordinate + Vector2i(0, 1)) * Resources.tile_size_vector
+			self.object_locations[object_coordinate] = object_node
 			self.objects.add_child(object_node)
 
-func create_objects(x: int, y: int, width: int, height: int) -> void:
-	var start_i: int = max(0, (y * cmp.width) + (x % cmp.width))
-	var end_i: int = min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
+func create_objects(x: int, y: int, width: int, height: int, submap: bool=false) -> void:
+	var start_i: int = 0 if submap else max(0, (y * cmp.width) + (x % cmp.width))
+	var end_i: int = len(cmp.tiles) if submap else min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
 
 	for i in range(start_i, end_i):
 		var sobj_index := cmp.tiles[i].sobj_index
-		var object_position := Vector2i((i % cmp.width), (i / cmp.width))
-		update_object(sobj_index, object_position)
+		var object_coordinate: Vector2i = Vector2i((i % cmp.width), (i / cmp.width))
+		if submap:
+			object_coordinate += Vector2i(x, y)
+		update_object(sobj_index, object_coordinate)
+		# Object Collision
+		if sobj_index > 0:
+			var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
+			var sobj_collision: int = sobj_renderer.sobj.objects[sobj_index].collision
+			if object_coordinate in tile_collision and \
+					sobj_collision > tile_collision[object_coordinate]:
+				tile_collision[object_coordinate] = sobj_collision
 
 func clear_tiles() -> void:
 	if self.tiles != null and \

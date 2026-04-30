@@ -55,6 +55,7 @@ var thread_ids: Array[int] = []
 @onready var target_box: Panel = $TargetBox
 @onready var map_limits_box: Panel = $MapLimitsBox
 @onready var map_bounds_box: Panel = $MapBoundsBox
+@onready var canvas_layer: CanvasLayer = $CanvasLayer
 @onready var tool_tip_label: Label = $CanvasLayer/ToolTipLabel
 @onready var title_bar := $CanvasLayer/Title
 @onready var tile_selection_area := $CanvasLayer/TileSelectionBackground
@@ -503,7 +504,8 @@ func _process(delta):
 
 		start_copy_position = Vector2i(-1, -1)
 
-	update_mouse_cursor()
+	if not GameState.menu_open:
+		update_mouse_cursor()
 
 	# Change Tile on Left Mouse Button (LMB) - Insert Mode
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and \
@@ -1025,8 +1027,9 @@ func update_mouse_cursor() -> void:
 			self.cursor_sprite.free()
 			self.cursor_sprite = null
 		self.cursor_sprite = cursor.get_cursor_frame_sprite(self.cursor_state)
-		self.cursor_sprite.position = get_global_mouse_position()
-		add_child(self.cursor_sprite)
+		self.cursor_sprite.position = get_viewport().get_mouse_position() - Vector2(0, Resources.tile_size)
+		self.cursor_sprite.offset = Vector2(0, Resources.tile_size)
+		canvas_layer.add_child(self.cursor_sprite)
 
 func update_cursor_preview(index: int) -> void:
 	map_copy_tiles.clear()
@@ -1112,6 +1115,7 @@ func _load_map():
 	# Select Map to Load
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_OPEN_FILE
 	GameState.menu_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_load_map_pressed():
@@ -1122,6 +1126,7 @@ func _save_map():
 	file_dialog.file_mode = FileDialog.FileMode.FILE_MODE_SAVE_FILE
 	file_dialog.current_file = Database.get_config_item_value("last_map_path").split("/")[-1]
 	GameState.menu_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	file_dialog.popup_centered_ratio(0.6)
 
 func _on_save_map_pressed():
@@ -1190,6 +1195,7 @@ func set_menu_closed(delay: float=0.2) -> void:
 	menu_closed_timer.autostart = true
 
 	menu_closed_timer.connect("timeout", func(): GameState.menu_open = false)
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	
 	add_child(menu_closed_timer)
 
@@ -1311,6 +1317,7 @@ func _on_settings_pressed():
 		set_menu_closed()
 	else:
 		GameState.menu_open = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func change_to_tile_mode(start_page: int=0) -> void:
 	_toggle_selection_area(true, false)
@@ -1438,6 +1445,7 @@ func _on_go_to_page_pressed():
 		set_menu_closed()
 	else:
 		GameState.menu_open = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		var current_page: int = current_tile_page + 1
 		if mode == MapMode.OBJECT:
 			current_page = current_object_page + 1

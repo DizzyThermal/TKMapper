@@ -414,6 +414,8 @@ visible = false
 [node name="GoToPageMenu" parent="CanvasLayer" unique_id=766651972 instance=ExtResource("37_svl66")]
 visible = false
 
+[node name="CursorCanvas" type="CanvasLayer" parent="." unique_id=2070671837]
+
 [connection signal="canceled" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_canceled"]
 [connection signal="file_selected" from="CanvasLayer/Title/FileDialog" to="." method="_on_file_dialog_file_selected"]
 [connection signal="pressed" from="CanvasLayer/Title/LoadMap" to="." method="_on_load_map_pressed"]

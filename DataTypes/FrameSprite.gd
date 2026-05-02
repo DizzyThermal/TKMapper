@@ -23,7 +23,7 @@ func _init(
 	self.palette = _palette
 	self.color_offset = _color_offset
 	self.centered = false
-	self.offset = Vector2i(self.ntk_frame.left, self.ntk_frame.top)
+	self.offset = self.ntk_frame.pivot
 
 	# Frame Initialization
 	if not FrameCache.has_item(self.frame_key):

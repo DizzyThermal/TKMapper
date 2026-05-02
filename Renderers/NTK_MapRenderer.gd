@@ -192,7 +192,8 @@ func create_object_sprite(sobj_index: int) -> Node2D:
 		var palette_index: int = sobj_renderer.tilec_renderer.tbl.palette_indices[tile_index]
 		var tilec_sprite: FrameSprite = create_tilec_sprite(tile_index, palette_index)
 		tilec_sprite.y_sort_enabled = true
-		tilec_sprite.offset = -(idx + 1) * Vector2i(0, Resources.tile_size) + tilec_sprite.ntk_frame.pivot
+		tilec_sprite.offset = -(idx + 1) * Vector2i(0, Resources.tile_size) + tilec_sprite.ntk_frame.pivot + Vector2i(0, Resources.tile_size)
+		tilec_sprite.position = Vector2i(0, -Resources.tile_size)
 		object.add_child(tilec_sprite)
 	object.set_meta("sobj_index", sobj_index)
 

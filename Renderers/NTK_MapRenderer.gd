@@ -81,6 +81,41 @@ func render_map_cropped(map_path: String, x: int, y: int, width: int, height: in
 	if Debug.debug_renderer_timings:
 		print("[", map_name, "]: ------- Loaded: ", Time.get_ticks_msec() - start_time, " ms\n")
 
+func update_map_tiles(
+		tiles_to_update: Array[Vector2i],
+		tiles_to_clear: Array[Vector2i]=[]) -> void:
+	for coordinate in tiles_to_update:
+		if coordinate.x < 0 or \
+				coordinate.y < 0 or \
+				coordinate.x >= cmp.width or \
+				coordinate.y >= cmp.height:
+			continue
+		# Tile
+		var tile_idx: int = (coordinate.y * cmp.width) + coordinate.x
+		var ab_index: int = cmp.tiles[tile_idx].ab_index
+		var frame = tile_renderer.get_frame(ab_index)
+		if ab_index == 0 or frame.width <= 0 or frame.height <= 0:
+			continue
+		update_tile(ab_index, coordinate)
+		# Tile Collision
+		if cmp.tiles[tile_idx].unpassable_tile:
+			tile_collision[coordinate] = 0xF
+		# Object
+		var object_idx: int = (coordinate.y * cmp.width) + coordinate.x
+		var sobj_index := cmp.tiles[object_idx].sobj_index
+		update_object(sobj_index, coordinate)
+		# Object Collision
+		if sobj_index > 0:
+			var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
+			var sobj_collision: int = sobj_renderer.sobj.objects[sobj_index].collision
+			if coordinate in tile_collision and \
+					sobj_collision > tile_collision[coordinate]:
+				tile_collision[coordinate] = sobj_collision
+	for coordinate in tiles_to_clear:
+		delete_tile(coordinate)
+		delete_object(coordinate)
+		tile_collision[coordinate] = 0x0
+
 func get_map_tile_indices(tile_indices) -> Array:
 	for i in range(len(cmp.tiles)):
 		var tile := cmp.tiles[i]
@@ -148,22 +183,32 @@ func update_tile(ab_index: int, tile_coordinate: Vector2i) -> void:
 		self.tiles.add_child(tile_sprite)
 
 func create_tilemap(x: int, y: int, width: int, height: int, submap: bool=false) -> void:
-	var start_i: int = 0 if submap else max(0, (y * cmp.width) + (x % cmp.width))
-	var end_i: int = len(cmp.tiles) if submap else min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
-	for i in range(start_i, end_i):
-		var ab_index: int = cmp.tiles[i].ab_index
-		var tile_coordinate: Vector2i = Vector2i((i % cmp.width), (i / cmp.width))
-		if submap:
-			tile_coordinate += Vector2i(x, y)
-		var frame = tile_renderer.get_frame(ab_index)
-		if ab_index == 0 or \
-				frame.width <= 0 or \
-				frame.height <= 0:
-			continue
-		update_tile(ab_index, tile_coordinate)
-		# Tile Collision
-		if cmp.tiles[i].unpassable_tile:
-			tile_collision[tile_coordinate] = 0xF
+	for local_y in range(height):
+		for local_x in range(width):
+			var source_x: int = x + local_x
+			var source_y: int = y + local_y
+			var dest_x: int = source_x
+			var dest_y: int = source_y
+			if submap:
+				source_x = local_x
+				source_y = local_y
+				dest_x = x + local_x
+				dest_y = y + local_y
+			if source_x < 0 or \
+					source_y < 0 or \
+					source_x >= cmp.width or \
+					source_y >= cmp.height:
+				continue
+			var tile_idx: int = (source_y * cmp.width) + source_x
+			var ab_index: int = cmp.tiles[tile_idx].ab_index
+			var tile_coordinate: Vector2i = Vector2i(dest_x, dest_y)
+			var frame = tile_renderer.get_frame(ab_index)
+			if ab_index == 0 or frame.width <= 0 or frame.height <= 0:
+				continue
+			update_tile(ab_index, tile_coordinate)
+			# Tile Collision
+			if cmp.tiles[tile_idx].unpassable_tile:
+				tile_collision[tile_coordinate] = 0xF
 
 func create_tilec_sprite(ab_index: int, palette_index: int, cache_prefix="tilec") -> FrameSprite:
 	var frame: NTK_Frame = sobj_renderer.tilec_renderer.get_frame(ab_index)
@@ -241,22 +286,33 @@ func update_object(sobj_index: int, object_coordinate: Vector2i) -> void:
 			self.objects.add_child(object_node)
 
 func create_objects(x: int, y: int, width: int, height: int, submap: bool=false) -> void:
-	var start_i: int = 0 if submap else max(0, (y * cmp.width) + (x % cmp.width))
-	var end_i: int = len(cmp.tiles) if submap else min(len(cmp.tiles), ((y + height) * cmp.width) + ((x + cmp.width) % cmp.width))
-
-	for i in range(start_i, end_i):
-		var sobj_index := cmp.tiles[i].sobj_index
-		var object_coordinate: Vector2i = Vector2i((i % cmp.width), (i / cmp.width))
-		if submap:
-			object_coordinate += Vector2i(x, y)
-		update_object(sobj_index, object_coordinate)
-		# Object Collision
-		if sobj_index > 0:
-			var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
-			var sobj_collision: int = sobj_renderer.sobj.objects[sobj_index].collision
-			if object_coordinate in tile_collision and \
-					sobj_collision > tile_collision[object_coordinate]:
-				tile_collision[object_coordinate] = sobj_collision
+	for local_y in range(height):
+		for local_x in range(width):
+			var source_x: int = x + local_x
+			var source_y: int = y + local_y
+			var dest_x: int = source_x
+			var dest_y: int = source_y
+			if submap:
+				source_x = local_x
+				source_y = local_y
+				dest_x = x + local_x
+				dest_y = y + local_y
+			if source_x < 0 or \
+					source_y < 0 or \
+					source_x >= cmp.width or \
+					source_y >= cmp.height:
+				continue
+			var object_idx: int = (source_y * cmp.width) + source_x
+			var object_coordinate: Vector2i = Vector2i(dest_x, dest_y)
+			var sobj_index := cmp.tiles[object_idx].sobj_index
+			update_object(sobj_index, object_coordinate)
+			# Object Collision
+			if sobj_index > 0:
+				var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
+				var sobj_collision: int = sobj_renderer.sobj.objects[sobj_index].collision
+				if object_coordinate in tile_collision and \
+						sobj_collision > tile_collision[object_coordinate]:
+					tile_collision[object_coordinate] = sobj_collision
 
 func clear_tiles() -> void:
 	if self.tiles != null and \

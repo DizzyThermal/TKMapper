@@ -1,8 +1,6 @@
 class_name NTK_TileRenderer extends NTK_Renderer
 
-const TileTblFileHandler = preload("res://FileHandlers/TileTblFileHandler.gd")
-
-var tbl: TileTblFileHandler = null
+var tbl: TileTblFileHandler
 
 func _numeric_sort(a: String, b: String) -> bool:
 	if int(a.replace("tile", "").replace("c", "").replace(".dat", "")) \
@@ -11,11 +9,11 @@ func _numeric_sort(a: String, b: String) -> bool:
 	return false
 
 func _init(tile_regex="tile\\d+\\.dat", tile_pal="tile.pal", tile_tbl="tile.tbl"):
-	var start_time := Time.get_ticks_msec()
+	var start_time: int = Time.get_ticks_msec()
 	var ntk_data_directory := DirAccess.open(Resources.data_dir)
 
 	# EPFs
-	var tileDatRegex := RegEx.new()
+	var tileDatRegex: RegEx = RegEx.new()
 	tileDatRegex.compile(tile_regex)
 
 	var files: Array[String] = []

@@ -1,9 +1,5 @@
 class_name NTK_Renderer extends Node
 
-const Indices = preload("res://DataTypes/Indices.gd")
-const NTK_Frame = preload("res://DataTypes/NTK_Frame.gd")
-const Palette = preload("res://DataTypes/Palette.gd")
-
 var epfs: Array[EpfFileHandler] = []
 var pal: PalFileHandler = null
 

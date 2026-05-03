@@ -1,9 +1,7 @@
 class_name NTK_SObjRenderer extends Node
 
-const SObj = preload("res://DataTypes/SObj.gd")
-
-var tilec_renderer: NTK_TileRenderer = null
-var sobj: SObjTblFileHandler = null
+var tilec_renderer: NTK_TileRenderer
+var sobj: SObjTblFileHandler
 
 func _init():
 	var start_time := Time.get_ticks_msec()

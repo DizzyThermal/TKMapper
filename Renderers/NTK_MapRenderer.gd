@@ -1,10 +1,5 @@
 class_name NTK_MapRenderer extends Node
 
-const CmpFileHandler = preload("res://FileHandlers/CmpFileHandler.gd")
-const Palette = preload("res://DataTypes/Palette.gd")
-const SObj = preload("res://DataTypes/SObj.gd")
-const NTK_Frame = preload("res://DataTypes/NTK_Frame.gd")
-
 var tile_renderer: NTK_TileRenderer = null
 var sobj_renderer: NTK_SObjRenderer = null
 
@@ -18,8 +13,6 @@ var objects: Node2D
 var object_locations: Dictionary[Vector2i, Node2D] = {}
 
 var tile_collision: Dictionary[Vector2i, int] = {}
-
-#var mutex: Mutex = Mutex.new()
 
 func _init(src_tiles: Node2D=null, src_objects: Node2D=null):
 	var start_time := Time.get_ticks_msec()
@@ -91,8 +84,8 @@ func render_map_cropped(map_path: String, x: int, y: int, width: int, height: in
 func get_map_tile_indices(tile_indices) -> Array:
 	for i in range(len(cmp.tiles)):
 		var tile := cmp.tiles[i]
-		var x := i % cmp.width
-		var y := i / cmp.width
+		var x: int = i % cmp.width
+		var y: int = i / cmp.width
 		tile_indices[y][x]["ab_index"] = tile.ab_index
 		tile_indices[y][x]["sobj_index"] = tile.sobj_index
 		tile_indices[y][x]["unpassable_tile"] = tile.unpassable_tile
@@ -186,7 +179,6 @@ func create_object_sprite(sobj_index: int) -> Node2D:
 	var object: Node2D = Node2D.new()
 	object.y_sort_enabled = true
 	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
-	var sobj_height: int = sobj.height
 	for idx in range(len(sobj.tile_indices)):
 		var tile_index: int = sobj.tile_indices[idx]
 		var palette_index: int = sobj_renderer.tilec_renderer.tbl.palette_indices[tile_index]
@@ -214,7 +206,6 @@ func create_object_texture(sobj_index: int) -> VBoxContainer:
 	var container: VBoxContainer = VBoxContainer.new()
 	container.add_theme_constant_override("separation", 0)
 	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
-	var sobj_height := sobj.height
 	for idx in range(len(sobj.tile_indices)):
 		var tile_index: int = sobj.tile_indices[idx]
 		var palette_index: int = sobj_renderer.tilec_renderer.tbl.palette_indices[tile_index]

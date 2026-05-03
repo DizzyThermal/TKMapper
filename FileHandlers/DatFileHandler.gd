@@ -51,5 +51,5 @@ func get_file_names() -> Array[String]:
 	var file_names: Array[String] = []
 	for file in files:
 		file_names.append(file.file_name)
-	
+
 	return file_names

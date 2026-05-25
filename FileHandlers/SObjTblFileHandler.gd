@@ -8,23 +8,26 @@ var objects: Dictionary[int, SObj] = {}
 func _init(file):
 	super(file)
 	
-	var file_position: int = 0
-	object_count = read_u32(file_position)
+	var file_position: int = file_offset
+	object_count = file_bytes.decode_u32(file_position)
 	file_position += 4
 	
-	var _unknown_short := read_u16(file_position)
+	var _unknown_short: int = file_bytes.decode_u16(file_position)
 	file_position += 2
 	
 	# Objects
 	for i in range(object_count):
-		var _unknown_bytes := read_bytes(file_position, 5)
+		# _unknown_bytes[5]
 		file_position += 5
-		var collision := read_u8(file_position)
+		var collision: int = file_bytes[file_position]
 		file_position += 1
-		var height := read_u8(file_position)
+		var height: int = file_bytes[file_position]
 		file_position += 1
 		var tile_indices: Array[int] = []
 		for j in range(height):
-			tile_indices.append(read_u16(file_position))
+			tile_indices.append(
+				file_bytes[file_position] | \
+				(file_bytes[file_position + 1] << 8)
+			)
 			file_position += 2
 		objects[i] = SObj.new(collision, height, tile_indices)

@@ -1,33 +1,36 @@
 class_name CmpFileHandler extends NTK_FileHandler
 
-const CmpTile = preload("res://DataTypes/CmpTile.gd")
-
-var map_name := ""
-var width := 0
-var height := 0
+var map_name: String = ""
+var width: int = 0
+var height: int = 0
 var tiles: Array[CmpTile] = []
 
 func _init(file_path):
 	super(file_path)
 
-	var file_position: int = 4  # CMAP
+	var file_position: int = file_offset + 4  # CMAP
 
-	var dims := read_u32(file_position)
+	var dims: int = file_bytes.decode_u32(file_position)
 	file_position += 4
 	self.width = dims & 0x0000FFFF
 	self.height = dims >> 0x10
 
-	var compressed_data := read_bytes(file_position, file_size - 4)
+	var compressed_data: PackedByteArray = file_bytes.slice(
+		file_position,
+		file_position + file_size - 4
+	)
 	file_position += file_size - 4
-	var map_data := compressed_data.decompress_dynamic(width * height * 6, FileAccess.COMPRESSION_DEFLATE)
+	var map_data: PackedByteArray = compressed_data.decompress_dynamic(width * height * 6, FileAccess.COMPRESSION_DEFLATE)
 
-	for i in range(int(len(map_data) / 6)):
+	var tile_count: int = len(map_data) / 6
+	tiles.resize(tile_count)
+	for i in range(tile_count):
 		var idx := (i * 6)
-		tiles.append(CmpTile.new(
+		tiles[i] = CmpTile.new(
 			map_data.decode_u16(idx),
 			bool(map_data.decode_u16(idx + 2)),
 			map_data.decode_u16(idx + 4) - 1
-		))
+		)
 
 func update_map(map_width: int, map_height: int, map_tiles: Array) -> void:
 	tiles.clear()

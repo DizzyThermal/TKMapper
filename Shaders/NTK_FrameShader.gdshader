@@ -48,7 +48,7 @@ void fragment() {
 
 	float mask_alpha = 1.0;
 	if (textureSize(mask_tex, 0).x > 0) {
-		mask_alpha = texture(mask_tex, UV).a;
+		mask_alpha = texture(mask_tex, UV).r;
 	}
 
 	COLOR = vec4(color.rgb, color.a * mask_alpha);

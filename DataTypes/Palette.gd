@@ -2,7 +2,7 @@ class_name Palette extends Node
 
 var colors: Array[Color] = []
 
-var animation_ranges := []
+var animation_ranges: Array[Dictionary] = []
 var animation_indices: Array[int] = []
 var is_animated: bool = false
 var animation_length: int = 0

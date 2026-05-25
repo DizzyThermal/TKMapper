@@ -48,10 +48,11 @@ func _init(
 
 	if FrameCache.has_item(frame_key):
 		if self.palette.is_animated:
-			var frame_raw_pixel_data: Array[int] = self.ntk_frame.raw_pixel_data_array
-			if Resources.arrays_intersect(self.palette.animation_indices, frame_raw_pixel_data):
-				self.is_animated = true
-				self.animation_length = self.palette.animation_length
+			for i in range(self.ntk_frame.pixel_data_length):
+				if self.ntk_frame.source_file_bytes[self.ntk_frame.pixel_data_offset + i] in palette.animation_indices:
+					self.is_animated = true
+					self.animation_length = self.palette.animation_length
+					break
 
 		var cache_item: FrameCacheItem = FrameCache.get_item(self.frame_key)
 		self.texture = cache_item.index_texture

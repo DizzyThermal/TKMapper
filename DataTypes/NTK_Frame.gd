@@ -8,8 +8,9 @@ var width: int
 var height: int
 var size: Vector2i = Vector2i(0, 0)
 var pivot: Vector2i = Vector2i(0, 0)
-var raw_pixel_data: PackedByteArray = PackedByteArray()
-var raw_pixel_data_array: Array[int] = []
+var source_file_bytes: PackedByteArray
+var pixel_data_offset: int
+var pixel_data_length: int
 var mask_image: Image
 
 func _init(
@@ -19,7 +20,9 @@ func _init(
 		p_bottom: int,
 		p_width: int,
 		p_height: int,
-		p_raw_pixel_data: PackedByteArray,
+		p_source_file_bytes: PackedByteArray,
+		p_pixel_data_offset: int,
+		p_pixel_data_length: int,
 		p_mask_image: Image):
 	self.left = p_left
 	self.top = p_top
@@ -27,8 +30,9 @@ func _init(
 	self.bottom = p_bottom
 	self.width = p_width
 	self.height = p_height
+	self.pixel_data_offset = p_pixel_data_offset
+	self.pixel_data_length = p_pixel_data_length
 	self.size = Vector2i(self.width, self.height)
 	self.pivot = Vector2i(self.left, self.top)
-	self.raw_pixel_data.append_array(p_raw_pixel_data)
-	self.raw_pixel_data_array.append_array(Array(self.raw_pixel_data))
+	self.source_file_bytes = p_source_file_bytes
 	self.mask_image = p_mask_image

@@ -4,6 +4,12 @@ const HEADER_SIZE: int = 0xC
 const FRAME_SIZE: int = 0x10
 const STENCIL_MASK: int = 0x80
 
+const OPAQUE: int = 255
+const TRANSPARENT: int = 0
+
+const BLACK_ABGR: int = 0xFF000000
+const TRANSPARENT_ABGR: int = 0x00000000
+
 var frame_count: int = 0
 var frames: Dictionary[int, NTK_Frame] = {}
 
@@ -12,19 +18,21 @@ var height: int = 0
 var unknown: int = 0
 var pixel_data_length: int = 0
 
+var mutex: Mutex = Mutex.new()
+
 func _init(file):
 	super(file)
 	
-	var file_position: int = 0
-	self.frame_count = read_s16(file_position)
+	var file_position: int = file_offset
+	self.frame_count = file_bytes.decode_s16(file_position)
 	file_position += 2
-	self.width = read_s16(file_position)
+	self.width = file_bytes.decode_s16(file_position)
 	file_position += 2
-	self.height = read_s16(file_position)
+	self.height = file_bytes.decode_s16(file_position)
 	file_position += 2
-	self.unknown = read_s16(file_position)
+	self.unknown = file_bytes.decode_s16(file_position)
 	file_position += 2
-	self.pixel_data_length = read_u32(file_position)
+	self.pixel_data_length = file_bytes.decode_u32(file_position)
 	file_position += 4
 
 func get_frame(
@@ -37,66 +45,72 @@ func get_frame(
 		return self.frames[frame_index]
 
 	# Read to Frame Data
-	var file_position: int = HEADER_SIZE + pixel_data_length + (frame_index * FRAME_SIZE)
-	var top := read_s16(file_position)
+	var file_position: int = file_offset + HEADER_SIZE + pixel_data_length + (frame_index * FRAME_SIZE)
+	var top: int = file_bytes.decode_s16(file_position)
 	file_position += 2
-	var left := read_s16(file_position)
+	var left: int = file_bytes.decode_s16(file_position)
 	file_position += 2
-	var bottom := read_s16(file_position)
+	var bottom: int = file_bytes.decode_s16(file_position)
 	file_position += 2
-	var right := read_s16(file_position)
+	var right: int = file_bytes.decode_s16(file_position)
 	file_position += 2
 	
-	var frame_width := right - left
-	var frame_height := bottom - top
+	var frame_width: int = right - left
+	var frame_height: int = bottom - top
 	
-	var pixel_data_offset := read_u32(file_position)
+	var pixel_data_offset: int = file_bytes.decode_u32(file_position)
 	file_position += 4
-	var mask_data_offset := read_u32(file_position)
+	var mask_data_offset: int = file_bytes.decode_u32(file_position)
 	file_position += 4
 	
 	# Read Pixel Data
-	file_position = HEADER_SIZE + pixel_data_offset
-	var raw_pixel_data_length := frame_width * frame_height
-	var raw_pixel_data := read_bytes(file_position, raw_pixel_data_length)
+	file_position = file_offset + HEADER_SIZE + pixel_data_offset
+	var raw_pixel_data_length: int = frame_width * frame_height
 	file_position += raw_pixel_data_length
 
 	# Read Mask Data
-	var mask_byte_array := PackedByteArray()
-	mask_byte_array.resize(frame_width * frame_height * 4)
-	file_position = HEADER_SIZE + mask_data_offset
-	var byte_offset := 0
+	var mask_byte_array: PackedByteArray = PackedByteArray()
+	mask_byte_array.resize(frame_width * frame_height)
+	file_position = file_offset + HEADER_SIZE + mask_data_offset
+	var byte_offset: int = 0
 	for i in range(frame_height):
-		var total_pixels := 0
+		var total_pixels: int = 0
 		while true:
-			var pixel_count := read_u8(file_position)
+			var pixel_count: int = file_bytes[file_position]
 			file_position += 1
 			if pixel_count == 0x0:
 				break
 
-			var should_draw := false
+			var should_draw: bool = false
 			if pixel_count > STENCIL_MASK:
 				should_draw = true
 
 			if should_draw:
 				pixel_count = pixel_count ^ STENCIL_MASK
 
-			var pixel_color := Color.BLACK if should_draw else Color.TRANSPARENT
+			var pixel_color: int = OPAQUE if should_draw else TRANSPARENT
 			for j in range(pixel_count):
-				mask_byte_array.encode_u32(byte_offset, pixel_color.to_abgr32())
-				byte_offset += 4
+				mask_byte_array[byte_offset] = pixel_color
+				byte_offset += 1
 				total_pixels += 1
 
 		if total_pixels < frame_width:
 			for j in range(frame_width - total_pixels):
-				mask_byte_array.encode_u32(byte_offset, Color.TRANSPARENT.to_abgr32())
-				byte_offset += 4
+				mask_byte_array[byte_offset] = TRANSPARENT
+				byte_offset += 1
 
 	var mask_image: Image
 	if frame_width > 0 and frame_height > 0:
-		mask_image = Image.create_from_data(frame_width, frame_height, false, Image.FORMAT_RGBA8, mask_byte_array)
+		mask_image = Image.create_from_data(frame_width, frame_height, false, Image.FORMAT_R8, mask_byte_array)
 
-	var frame := NTK_Frame.new(left, top, right, bottom, frame_width, frame_height, raw_pixel_data, mask_image)
+	var frame: NTK_Frame = NTK_Frame.new(
+		left, top, right, bottom,
+		frame_width, frame_height,
+		file_bytes,
+		file_offset + HEADER_SIZE + pixel_data_offset,
+		raw_pixel_data_length,
+		mask_image
+	)
 	mutex.lock()
 	self.frames[frame_index] = frame
 	mutex.unlock()
@@ -111,8 +125,6 @@ func get_frame(
 		print("DEBUG:   Frame Info:")
 		print("DEBUG:     Dimensions (LTRB): ", [frame.left, frame.top, frame.right, frame.bottom])
 		print("DEBUG:     Dimensions (WxH):  ", frame.width, " x ", frame.height)
-		if Debug.debug_show_pixel_data:
-			print("DEBUG:     Raw Pixel Bytes: ", frame.raw_pixel_data.to_int32_array())
 		if Debug.debug_show_pixel_mask_data and frame.mask_image != null:
 			print("DEBUG:     Mask Image Bytes:", frame.mask_image.get_data())
 

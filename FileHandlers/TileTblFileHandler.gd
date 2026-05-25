@@ -7,15 +7,15 @@ var palette_indices: Array[int] = []
 
 func _init(file):
 	super(file)
-	var file_position: int = 0
+	var file_position: int = file_offset
 	
-	tile_count = read_u32(file_position)
+	tile_count = file_bytes.decode_u32(file_position)
 	file_position += 4
 	
 	for i in range(tile_count):
-		var lsb := read_u8(file_position)
+		var lsb := file_bytes[file_position]
 		file_position += 1
-		var msb := read_u8(file_position)
+		var msb := file_bytes[file_position]
 		file_position += 1
 		var palette_index := ((msb & TBL_MASK) << 8) | lsb
 		

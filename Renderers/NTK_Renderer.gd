@@ -88,24 +88,16 @@ static func get_frame_texture_rect_with_dats(
 	return frame_texture_rect
 
 static func create_index_texture(frame: NTK_Frame) -> ImageTexture:
-	var pixel_count: int = frame.width * frame.height
-	var bytes := PackedByteArray()
-	bytes.resize(pixel_count * 4)
-
-	for pixel in range(pixel_count):
-		var idx := pixel * 4
-		bytes[idx] = frame.raw_pixel_data[pixel]
-		bytes[idx + 1] = 0
-		bytes[idx + 2] = 0
-		bytes[idx + 3] = 255
-
 	return ImageTexture.create_from_image(
 		Image.create_from_data(
 			frame.width,
 			frame.height,
 			false,
-			Image.FORMAT_RGBA8,
-			bytes
+			Image.FORMAT_R8,
+			frame.source_file_bytes.slice(
+				frame.pixel_data_offset,
+				frame.pixel_data_offset + frame.pixel_data_length
+			)
 		)
 	)
 
@@ -130,67 +122,3 @@ static func create_palette_texture(palette: Palette) -> ImageTexture:
 			bytes
 		)
 	)
-
-# Shaderless Rendering (SLOW)
-func create_pixel_data(
-		frame_index: int,
-		palette_index: int,
-		animated_color_offset: int=0,
-		initial_color_offset: int=0) -> PackedByteArray:
-	var frame := get_frame(frame_index)
-	var palette := pal.get_palette(palette_index)
-	var pixel_count := frame.width * frame.height
-	var pixel_data := PackedByteArray()
-	pixel_data.resize(pixel_count * 4)
-
-	var color_map = PackedInt32Array()
-	color_map.resize(Resources.palette_color_count)
-
-	for i in range(Resources.palette_color_count):
-		var original_idx = i
-		var current_idx = i
-
-		if len(Resources.offset_range) == 0 or original_idx in Resources.offset_range:
-			current_idx = (original_idx + initial_color_offset) % Resources.palette_color_count
-
-		for anim in palette.animation_ranges:
-			if current_idx >= anim.min_index and current_idx <= anim.max_index:
-				var range_len = anim.max_index - anim.min_index + 1
-				var current_pos = current_idx - anim.min_index
-				var shifted_pos = posmod(current_pos + animated_color_offset, range_len)
-				current_idx = anim.min_index + shifted_pos
-				break
-
-		color_map[i] = current_idx
-
-	var raw = frame.raw_pixel_data
-	var palette_colors = palette.colors
-
-	for i in range(pixel_count):
-		var raw_idx = raw[i]
-		var mapped_idx = color_map[raw_idx]
-		var color_u32 = palette_colors[mapped_idx].to_abgr32()
-		pixel_data.encode_u32(i * 4, color_u32)
-
-	return pixel_data
-
-# Shaderless Rendering (SLOW)
-func render_frame(
-		frame_index: int,
-		palette_index: int=0,
-		animated_color_offset: int=0,
-		initial_color_offset: int=0) -> Image:
-	var frame := get_frame(frame_index)
-	if frame.width == 0 or frame.height == 0:
-		return null
-	var pixel_data := create_pixel_data(frame_index, palette_index, animated_color_offset, initial_color_offset)
-	var frame_image := Image.create_from_data(frame.width, frame.height, false, Image.FORMAT_RGBA8, pixel_data)
-	if frame.mask_image != null \
-			and frame.mask_image.get_width() > 0 \
-			and frame.mask_image.get_height() > 0:
-		var image := Image.create_empty(frame.width, frame.height, false, Image.FORMAT_RGBA8)
-		var mask_rect := Rect2i(0, 0, frame.mask_image.get_width(), frame.mask_image.get_height())
-		image.blit_rect_mask(frame_image, frame.mask_image, mask_rect, Vector2i(0, 0))
-		frame_image = image
-
-	return frame_image

@@ -1,8 +1,8 @@
-extends Node
+class_name CmpTile extends Node
 
-var ab_index: int = -1
+var ab_index: int
 var unpassable_tile: bool = false
-var sobj_index: int = -1
+var sobj_index: int
 
 func _init(
 		p_ab_index: int,

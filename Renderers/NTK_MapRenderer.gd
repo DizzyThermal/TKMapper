@@ -1,9 +1,9 @@
 class_name NTK_MapRenderer extends Node
 
-var tile_renderer: NTK_TileRenderer = null
-var sobj_renderer: NTK_SObjRenderer = null
+var tile_renderer: NTK_TileRenderer
+var sobj_renderer: NTK_SObjRenderer
 
-var cmp: CmpFileHandler = null
+var cmp: CmpFileHandler
 var thread_ids: Array[int] = []
 
 var tiles: Node2D
@@ -64,22 +64,72 @@ func render_map_cropped(map_path: String, x: int, y: int, width: int, height: in
 		x = x if x >= 0 else 0
 		y = y if y >= 0 else 0
 
-	# Create TileMap (Ground)
-	var tilemap_start_time := Time.get_ticks_msec()
-	create_tilemap(x, y, width, height, submap)
-	var map_name: String = get_map_name(map_path)
-	if Debug.debug_renderer_timings:
-		print("[", map_name, "]: Create TileMap: ", Time.get_ticks_msec() - tilemap_start_time, " ms")
+	# Render Map
+	for local_y in range(height):
+		for local_x in range(width):
+			var source_x: int = x + local_x if not submap else local_x
+			var source_y: int = y + local_y if not submap else local_y
+			var dest_x: int = x + local_x
+			var dest_y: int = y + local_y
 
-	if render_objects:
-		# Create Objects (Static Objects)
-		var objects_start_time := Time.get_ticks_msec()
-		create_objects(x, y, width, height, submap)
-		if Debug.debug_renderer_timings:
-			print("[", map_name, "]: Create Objects: ", Time.get_ticks_msec() - objects_start_time, " ms")
-	
-	if Debug.debug_renderer_timings:
-		print("[", map_name, "]: ------- Loaded: ", Time.get_ticks_msec() - start_time, " ms\n")
+			if source_x < 0 or source_y < 0 or \
+					source_x >= cmp.width or source_y >= cmp.height:
+				continue
+
+			var tile_idx: int = (source_y * cmp.width) + source_x
+			var tile_data = cmp.tiles[tile_idx]
+			var coordinate := Vector2i(dest_x, dest_y)
+			# Tile
+			var ab_index: int = tile_data.ab_index
+			if ab_index != 0:
+				var frame = tile_renderer.get_frame(ab_index)
+				if frame.width > 0 and frame.height > 0:
+					_create_tile_direct(ab_index, coordinate)
+					if tile_data.unpassable_tile:
+						tile_collision[coordinate] = 0xF
+			# Static Object
+			var sobj_index: int = tile_data.sobj_index
+			if sobj_index >= 1:
+				_create_object_direct(sobj_index, coordinate)
+				var sobj_collision: int = sobj_renderer.sobj.objects[sobj_index].collision
+				if coordinate in tile_collision and sobj_collision > tile_collision[coordinate]:
+					tile_collision[coordinate] = sobj_collision
+	## Create TileMap (Ground)
+	#var tilemap_start_time := Time.get_ticks_msec()
+	#create_tilemap(x, y, width, height, submap)
+	#var map_name: String = get_map_name(map_path)
+	#if Debug.debug_renderer_timings:
+		#print("[", map_name, "]: Create TileMap: ", Time.get_ticks_msec() - tilemap_start_time, " ms")
+#
+	#if render_objects:
+		## Create Objects (Static Objects)
+		#var objects_start_time := Time.get_ticks_msec()
+		#create_objects(x, y, width, height, submap)
+		#if Debug.debug_renderer_timings:
+			#print("[", map_name, "]: Create Objects: ", Time.get_ticks_msec() - objects_start_time, " ms")
+	#
+	#if Debug.debug_renderer_timings:
+		#print("[", map_name, "]: ------- Loaded: ", Time.get_ticks_msec() - start_time, " ms\n")
+
+func _create_tile_direct(
+		ab_index: int,
+		coordinate: Vector2i) -> void:
+	var palette_index: int = tile_renderer.tbl.palette_indices[ab_index]
+	var tile_sprite: FrameSprite = create_tile_sprite(ab_index, palette_index)
+	tile_sprite.position = coordinate * Resources.tile_size_vector
+	self.tile_locations[coordinate] = tile_sprite
+	self.tiles.add_child(tile_sprite)
+
+func _create_object_direct(
+		sobj_index: int,
+		coordinate: Vector2i) -> void:
+	var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
+	if sobj.height < 1:
+		return
+	var object_node: Node2D = create_object_sprite(sobj_index)
+	object_node.position = (coordinate + Vector2i(0, 1)) * Resources.tile_size_vector
+	self.object_locations[coordinate] = object_node
+	self.objects.add_child(object_node)
 
 func update_map_tiles(
 		tiles_to_update: Array[Vector2i],
@@ -174,6 +224,13 @@ func delete_tile(tile_coordinate: Vector2i) -> void:
 		self.tile_locations.erase(tile_coordinate)
 
 func update_tile(ab_index: int, tile_coordinate: Vector2i) -> void:
+	# If ab_index is the same, don't update
+	if tile_coordinate in self.tile_locations and \
+			self.tile_locations[tile_coordinate] != null:
+		var tile_sprite: FrameSprite = self.tile_locations[tile_coordinate]
+		if tile_sprite.get_meta("ab_index") == ab_index:
+			return
+	# Clear previous tile
 	delete_tile(tile_coordinate)
 	if ab_index > 0:
 		var palette_index: int = tile_renderer.tbl.palette_indices[ab_index]
@@ -229,8 +286,7 @@ func create_object_sprite(sobj_index: int) -> Node2D:
 		var palette_index: int = sobj_renderer.tilec_renderer.tbl.palette_indices[tile_index]
 		var tilec_sprite: FrameSprite = create_tilec_sprite(tile_index, palette_index)
 		tilec_sprite.y_sort_enabled = true
-		tilec_sprite.offset = -(idx + 1) * Vector2i(0, Resources.tile_size) + tilec_sprite.ntk_frame.pivot + Vector2i(0, Resources.tile_size)
-		tilec_sprite.position = Vector2i(0, -Resources.tile_size)
+		tilec_sprite.offset = -(idx + 1) * Vector2i(0, Resources.tile_size) + tilec_sprite.ntk_frame.pivot # + Vector2i(0, Resources.tile_size / 2)
 		object.add_child(tilec_sprite)
 	object.set_meta("sobj_index", sobj_index)
 
@@ -275,12 +331,19 @@ func delete_object(object_coordinate: Vector2i) -> void:
 		self.object_locations.erase(object_coordinate)
 
 func update_object(sobj_index: int, object_coordinate: Vector2i) -> void:
+	# If ab_index is the same, don't update
+	if object_coordinate in self.object_locations and \
+			self.object_locations[object_coordinate] != null:
+		var object_node: Node2D = self.object_locations[object_coordinate]
+		if object_node.get_meta("sobj_index") == sobj_index:
+			return
 	delete_object(object_coordinate)
 	if sobj_index >= 1:
 		var sobj: SObj = sobj_renderer.sobj.objects[sobj_index]
 		var sobj_height := sobj.height
 		if sobj_height >= 1:
 			var object_node: Node2D = create_object_sprite(sobj_index)
+			#object_node.position = object_coordinate * Resources.tile_size_vector + Vector2i(0, Resources.tile_size / 2)
 			object_node.position = (object_coordinate + Vector2i(0, 1)) * Resources.tile_size_vector
 			self.object_locations[object_coordinate] = object_node
 			self.objects.add_child(object_node)

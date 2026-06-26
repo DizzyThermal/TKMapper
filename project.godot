@@ -33,6 +33,8 @@ Debug="*res://Resources/Debug.gd"
 [debug]
 
 file_logging/enable_file_logging=true
+gdscript/warnings/integer_division=0
+gdscript/warnings/narrowing_conversion=0
 
 [display]
 

@@ -9,7 +9,6 @@ var cursor_sprite: FrameSprite = null
 var cursor_tile := Sprite2D.new()
 var cursor_rect := Rect2(Vector2i.ZERO, Resources.tile_size_vector)
 var cursor_inner_rect := Rect2(Vector2i(0.1, 0.1), Vector2i(0.8, 0.8))
-var map_regex: RegEx = RegEx.new()
 var start_copy_position: Vector2i = Vector2i(-1, -1)
 var start_paste_position: Vector2i = Vector2i(-1, -1)
 var start_selection_position: int = -1
@@ -110,9 +109,7 @@ func initialize() -> void:
 	var last_map_path_parts: PackedStringArray = Database.get_config_item_value("last_map_path").split("/")
 	var last_map_dir: String = "/".join(last_map_path_parts.slice(0, len(last_map_path_parts) - 1))
 	file_dialog.current_dir = last_map_dir
-	file_dialog.add_filter("*.cmp", "Map Files")
-
-	map_regex.compile("TK(\\d+).cmp")
+	file_dialog.add_filter("*.cmp, *.map", "Map Files")
 
 	# Camera Limits
 	camera.limit_left = 0
@@ -128,7 +125,6 @@ func initialize() -> void:
 			if "ab_index" in map_tiles[y][x] and map_tiles[y][x]["ab_index"] != 0:
 				current_tile_index = map_tiles[y][x]["ab_index"]
 	if current_tile_index > 0:
-		var palette_index: int = Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
 		var frame: NTK_Frame = Renderers.map_renderer.tile_renderer.get_frame(current_tile_index)
 		if frame.width > 0 \
 				and frame.height > 0:
@@ -310,7 +306,7 @@ func initialize() -> void:
 
 	initialized = true
 
-func _process(delta):
+func _process(_delta: float) -> void:
 	# Initialize the Mapper
 	if not Database.database_initialized:
 		return
@@ -491,9 +487,6 @@ func _process(delta):
 					"sobj_index": sobj_index,
 					"unpassable": unpassable,
 				})
-				var palette_index: int = Renderers.map_renderer.tile_renderer.tbl.palette_indices[ab_index]
-				var frame: NTK_Frame = Renderers.map_renderer.tile_renderer.get_frame(ab_index)
-				var frame_rect := Rect2i(0, 0, frame.width, frame.height)
 				if ab_index >= 0:
 					pass
 					cursor_map_renderer.update_tile(ab_index, Vector2i(x, y))
@@ -674,7 +667,6 @@ func _process(delta):
 
 	if mouse_over_tile_map() and \
 			not GameState.menu_open:
-		var info_tile_index = "ERROR" # Renderers.map_renderer.update_tile(0, mouse_coordinate)
 		status_label.text = "(" + str(mouse_coordinate.x) + ", " + str(mouse_coordinate.y) + ")"
 	elif not mouse_over_tile_map() and \
 			not GameState.menu_open:
@@ -738,10 +730,10 @@ func load_map(map_path: String) -> void:
 		object_coordinate.y -= 1
 		map_objects[object_coordinate] = object
 	# Load Unpassable Tiles in
-	for i in range(len(Renderers.map_renderer.cmp.tiles)):
-		var tile := Renderers.map_renderer.cmp.tiles[i]
-		var x := i % Renderers.map_renderer.cmp.width
-		var y := i / Renderers.map_renderer.cmp.width
+	for i in range(len(Renderers.map_renderer.map.tiles)):
+		var tile: MapTile = Renderers.map_renderer.map.tiles[i]
+		var x: int = i % Renderers.map_renderer.map.width
+		var y: int = i / Renderers.map_renderer.map.width
 		if tile.unpassable_tile:
 			map_tiles[y][x]["unpassable"] = true
 			var unpassable_sprite := Sprite2D.new()
@@ -752,11 +744,11 @@ func load_map(map_path: String) -> void:
 			map_unpassables[Vector2i(x, y)] = unpassable_sprite
 	undo_stack.clear()
 	undo_button.disabled = true
-	GameState.map_size = Vector2i(Renderers.map_renderer.cmp.width, Renderers.map_renderer.cmp.height)
+	GameState.map_size = Vector2i(Renderers.map_renderer.map.width, Renderers.map_renderer.map.height)
 	map_bounds_box.size = GameState.map_size * Resources.tile_size
 	
 	camera.position = Vector2(-1000, 400)
-	title_label.text = map_path.split("/")[-1].replace(".cmp", "")
+	title_label.text = map_path.split("/")[-1].replace(".cmp", "").replace(".map", "")
 
 func paste_cursor_preview(paste_coordinate: Vector2i) -> void:
 	for y in range(len(map_copy_tiles)):
@@ -1036,7 +1028,6 @@ func update_cursor_preview(index: int) -> void:
 	if mode == MapMode.TILE \
 			and index > 0:
 		current_tile_index = index
-		var palette_index := Renderers.map_renderer.tile_renderer.tbl.palette_indices[current_tile_index]
 		var frame: NTK_Frame = Renderers.map_renderer.tile_renderer.get_frame(current_tile_index)
 		if frame.width > 0 \
 				and frame.height > 0:
@@ -1081,7 +1072,7 @@ func load_tileset(start_page: int=0) -> void:
 	clear_container(tile_set_container)
 	for i in range(start_tile, end_tile):
 		var palette_index: int = Renderers.map_renderer.tile_renderer.tbl.palette_indices[i]
-		var tile_texture := Renderers.map_renderer.create_tile_texture_rect(i, palette_index)
+		var tile_texture: FrameTextureRect = Renderers.map_renderer.create_tile_texture_rect(i, palette_index)
 		tile_texture.custom_minimum_size = Resources.tile_size_vector
 		tile_texture.connect("mouse_entered", func(): self.hover_tile_index = i)
 		tile_set_container.add_child(tile_texture)
@@ -1170,17 +1161,18 @@ func calculate_map_size() -> Vector2i:
 
 func _on_file_dialog_file_selected(map_path: String):
 	if file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_OPEN_FILE:
-		# Load Map from Path
-		var result = map_regex.search(map_path)
-		if map_path.ends_with(".cmp"):
+		if map_path.to_lower().ends_with(".cmp") or \
+				map_path.to_lower().ends_with(".map"):
 			load_map(map_path)
 			update_last_map_path(map_path)
 	elif file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
 		GameState.map_size = calculate_map_size()
 		map_bounds_box.size = GameState.map_size * Resources.tile_size
 
-		Renderers.map_renderer.cmp.update_map(GameState.map_size.x, GameState.map_size.y, map_tiles)
-		Renderers.map_renderer.cmp.save_to_file(map_path)
+		var compressed: bool = true if map_path.to_lower().ends_with(".cmp") else false
+		print("COMPRESSED: ", compressed)
+		Renderers.map_renderer.map.update_map(GameState.map_size.x, GameState.map_size.y, map_tiles)
+		Renderers.map_renderer.map.save_to_file(map_path, compressed)
 		update_last_map_path(map_path)
 		load_map(map_path)
 	set_menu_closed()
@@ -1333,7 +1325,6 @@ func change_to_tile_mode(start_page: int=0) -> void:
 	_toggle_selection_area(true, true)
 
 func _on_tile_mode_pressed():
-	var tile_index: int = current_tile_page * int(tile_page_size_spinbox.value)
 	change_to_tile_mode(current_tile_page)
 
 func change_to_object_mode(start_page: int=0) -> void:
@@ -1377,21 +1368,21 @@ func _on_unpassable_mode_pressed():
 func _toggle_selection_area(
 		override: bool=false,
 		override_value: bool=false) -> void:
-	var hidden: bool = false
+	var selection_hidden: bool = false
 	if mode == MapMode.TILE:
 		tile_selection_area.visible = not tile_selection_area.visible \
 			if not override else override_value
-		hidden = not tile_selection_area.visible
+		selection_hidden = not tile_selection_area.visible
 		object_selection_area.visible = false
 	elif mode == MapMode.OBJECT:
 		object_selection_area.visible = not object_selection_area.visible \
 			if not override else override_value
-		hidden = not object_selection_area.visible
+		selection_hidden = not object_selection_area.visible
 		tile_selection_area.visible = false
 	elif mode == MapMode.UNPASSABLE:
 		unpassables.visible = not unpassables.visible \
 			if not override else override_value
-		hidden = true
+		selection_hidden = true
 		tile_selection_area.visible = false
 		object_selection_area.visible = false
 
@@ -1405,7 +1396,7 @@ func _toggle_selection_area(
 			next_button.global_position + Vector2(-92, -30)
 		)
 	
-	if hidden:
+	if selection_hidden:
 		hide_panel_button.texture_normal = load("res://Images/eye-crossed.svg")
 		hide_panel_button.texture_pressed = load("res://Images/eye-crossed.svg")
 		hide_panel_button.texture_hover = load("res://Images/eye-crossed-dark.svg")

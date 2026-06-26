@@ -1,4 +1,4 @@
-class_name CmpTile extends Node
+class_name MapTile extends Node
 
 var ab_index: int
 var unpassable_tile: bool = false

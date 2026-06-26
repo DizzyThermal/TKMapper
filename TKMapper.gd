@@ -1,7 +1,5 @@
 extends Node2D
 
-const NTK_Frame = preload("res://DataTypes/NTK_Frame.gd")
-
 # State Variables
 var cursor_map_renderer: NTK_MapRenderer = null
 var cursor: NTK_Cursor = NTK_Cursor.new()

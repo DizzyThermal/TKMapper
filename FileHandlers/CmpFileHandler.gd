@@ -20,7 +20,7 @@ func _init(file_path):
 	var tile_count: int = len(map_data) / 6
 	tiles.resize(tile_count)
 	for i in range(tile_count):
-		var idx := (i * 6)
+		var idx: int = (i * 6)
 		tiles[i] = MapTile.new(
 			map_data.decode_u16(idx),
 			bool(map_data.decode_u16(idx + 2)),

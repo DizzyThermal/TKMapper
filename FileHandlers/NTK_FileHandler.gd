@@ -35,3 +35,7 @@ func read_utf16(file_position: int, length: int) -> String:
 		file_position + (length * 2))
 	
 	return byte_slice.get_string_from_utf16()
+
+func decode_u16_be(file_position: int) -> int:
+	var le_value: int = file_bytes.decode_u16(file_position)
+	return ((le_value & 0xFF) << 8) | ((le_value >> 8) & 0xFF)

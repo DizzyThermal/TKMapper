@@ -636,13 +636,6 @@ func _process(_delta: float) -> void:
 		if mode != MapMode.UNPASSABLE:
 			target_box.visible = true
 	else:
-		#print("---------------chasing-down-focus-bug---------------------")
-		#print("mouse_coordinate: ", mouse_coordinate)
-		#print("coordinate_on_map: ", coordinate_on_map(mouse_coordinate))
-		#print("mouse_position.y >= 4 :: ", mouse_position.y >= 4)
-		#print("not grabbing_map :: ", not grabbing_map)
-		#print("mouse_over_tile_map() :: ", mouse_over_tile_map())
-		#print("not GameState.menu_open :: ", not GameState.menu_open)
 		cursor_tile.visible = false
 		cursor_preview.visible = false
 		target_box.visible = false
@@ -748,7 +741,7 @@ func load_map(map_path: String) -> void:
 	map_bounds_box.size = GameState.map_size * Resources.tile_size
 	
 	camera.position = Vector2(-1000, 400)
-	title_label.text = map_path.split("/")[-1].replace(".cmp", "").replace(".map", "")
+	title_label.text = map_path.split("/")[-1]
 
 func paste_cursor_preview(paste_coordinate: Vector2i) -> void:
 	for y in range(len(map_copy_tiles)):
@@ -1169,10 +1162,10 @@ func _on_file_dialog_file_selected(map_path: String):
 		GameState.map_size = calculate_map_size()
 		map_bounds_box.size = GameState.map_size * Resources.tile_size
 
-		var compressed: bool = true if map_path.to_lower().ends_with(".cmp") else false
-		print("COMPRESSED: ", compressed)
+		var compress: bool = true if map_path.to_lower().ends_with(".cmp") else false
+		var include_passable_flag: bool = true if map_path.to_lower().ends_with(".cmp") else false
 		Renderers.map_renderer.map.update_map(GameState.map_size.x, GameState.map_size.y, map_tiles)
-		Renderers.map_renderer.map.save_to_file(map_path, compressed)
+		Renderers.map_renderer.map.save_to_file(map_path, compress, include_passable_flag)
 		update_last_map_path(map_path)
 		load_map(map_path)
 	set_menu_closed()

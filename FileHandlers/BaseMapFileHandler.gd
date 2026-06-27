@@ -34,10 +34,11 @@ func save_to_file(
 		map_file_access.store_8(77)	# M
 		map_file_access.store_8(65)	# A
 		map_file_access.store_8(80)	# P
-
-	# Dimensions
-	map_file_access.store_16(self.width)
-	map_file_access.store_16(self.height)
+		map_file_access.store_16(width)
+		map_file_access.store_16(height)
+	else:
+		map_file_access.store_16(((width & 0xFF) << 8) | ((width >> 8) & 0xFF))
+		map_file_access.store_16(((height & 0xFF) << 8) | ((height >> 8) & 0xFF))
 
 	# Collect Map Data
 	var map_data: PackedByteArray = PackedByteArray()
@@ -45,12 +46,22 @@ func save_to_file(
 	map_data.resize(len(tiles) * tile_size)
 	var map_data_pointer := 0
 	for tile in tiles:
-		map_data.encode_u16(map_data_pointer, max(tile.ab_index, 0))
+		var ab_index: int = max(tile.ab_index, 0)
+		if not compress:
+			ab_index = ((ab_index & 0xFF) << 8) | ((ab_index >> 8) & 0xFF)
+		map_data.encode_u16(map_data_pointer, ab_index)
+		map_data_pointer += 2
 		if include_passable_flag:
-			map_data.encode_u16(map_data_pointer + 2, int(tile.unpassable_tile))
-		var sobj_offset: int = 4 if include_passable_flag else 2
-		map_data.encode_u16(map_data_pointer + sobj_offset, tile.sobj_index + 1)
-		map_data_pointer += tile_size
+			var unpassable_tile: int = int(tile.unpassable_tile)
+			if not compress:
+				unpassable_tile = ((unpassable_tile & 0xFF) << 8) | ((unpassable_tile >> 8) & 0xFF)
+			map_data.encode_u16(map_data_pointer, unpassable_tile)
+			map_data_pointer += 2
+		var sobj_index: int = tile.sobj_index + 1
+		if not compress:
+			sobj_index = ((sobj_index & 0xFF) << 8) | ((sobj_index >> 8) & 0xFF)
+		map_data.encode_u16(map_data_pointer, sobj_index)
+		map_data_pointer += 2
 
 	if compress:
 		# Deflate Map Data
